@@ -14,11 +14,11 @@ from tensorflow.keras.layers import Lambda, Input
 class FeatureExtractor(object):
     """Generic feature extractor."""
 
-    def __init__(self, hub_url, tranable=False, input_size=224):
+    def __init__(self, hub_url, trainable=False, input_size=224):
         self.input_size = input_size
         self.hub_model = tf.keras.Sequential([
             hub.KerasLayer(hub_url,
-                           trainable=tranable),
+                           trainable=trainable),
         ])
         self.hub_model.build([None, self.input_size, self.input_size, 3])
         self.extracted_features = None
@@ -49,6 +49,3 @@ class NASNetLargeExtractor(FeatureExtractor):
         super(FeatureExtractor, self).__init__(
             hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
             input_size=331)
-
-    def save_features(self, path="NASNetLarge_features.csv"):
-        super(FeatureExtractor, self).save_features(path)
