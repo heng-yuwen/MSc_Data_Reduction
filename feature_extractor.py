@@ -50,9 +50,16 @@ class FeatureExtractor(object):
     def load_features(self, path):
         return pd.read_csv(path, index_col=False).values
 
-    def test_feature_quality(self, y, epochs=25, batch_size=128):
+    def test_feature_quality(self, y, epochs=25, batch_size=128, validation_data=None):
         if type(self.extracted_features) != np.ndarray:
             AttributeError("Extracted features not exist, please call .extract() first")
+
+        try:
+            (x_test, y_test) = validation_data
+            x_test = self._extract(x_test)
+            validation_data = (x_test, y_test)
+        except:
+            validation_data = None
 
         input_dim = self.extracted_features.shape[1]
 
@@ -67,7 +74,8 @@ class FeatureExtractor(object):
         self.logistic_model.compile(optimizer='sgd',
                                     loss='categorical_crossentropy',
                                     metrics=['accuracy'])
-        self.logistic_model.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size)
+        self.logistic_model.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
+                                validation_data=validation_data)
 
     def save_extractor(self, path):
         self.hub_model.save_weights(path)
@@ -89,7 +97,7 @@ class NASNetLargeExtractor(FeatureExtractor):
         if not self.model_full:
             self.extract(x, batch_size)
         if not self.logistic_model:
-            self.test_feature_quality(y, epochs=epochs, batch_size=batch_size)
+            self.test_feature_quality(y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
         # fine-tune the network
         fine_tune_model = tf.keras.Sequential([
