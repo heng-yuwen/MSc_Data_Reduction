@@ -14,8 +14,7 @@ from tensorflow.keras.layers import Lambda, Input
 class FeatureExtractor(object):
     """Generic feature extractor."""
 
-    def __init__(self, hub_url=None, extractor_path=None, trainable=False, input_size=224):
-        self.logistic_model = None
+    def __init__(self, image_size, classes, hub_url=None, extractor_path=None, trainable=False, input_size=224):
         self.model_full = None
         self.input_size = input_size
         if extractor_path is None:
@@ -26,17 +25,38 @@ class FeatureExtractor(object):
         else:
             self.hub_model = tf.keras.models.load_model(extractor_path)
         self.hub_model.build([None, self.input_size, self.input_size, 3])
-        self.extracted_features = None
 
-    def extract(self, x, batch_size=128):
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
-        image_size = x.shape[1]
+        # build the full model
         self.model_full = tf.keras.Sequential([
             Input(shape=(image_size, image_size, 3)),
             Lambda(lambda image: tf.image.resize(image, [self.input_size, self.input_size])),
             self.hub_model
         ])
+        input_dim = self.hub_model.output.shape[-1]
+        # build softmax classification layer.
+        self.logistic_model = tf.keras.Sequential()
+        self.logistic_model.add(tf.keras.layers.Dense(classes,  # output dim is one score per each class
+                                                      activation='softmax',
+                                                      kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
+                                                      input_dim=input_dim))  # input dimension = number of features your
+        # data has;
+
+        self.logistic_model.compile(optimizer='sgd',
+                                    loss='categorical_crossentropy',
+                                    metrics=['accuracy'])
+
+        # build fine-tune model
+        # fine-tune the network
+        self.fine_tune_model = tf.keras.Sequential([
+            self.model_full,
+            self.logistic_model
+        ])
+
+        self.extracted_features = None
+
+    def extract(self, x, batch_size=128):
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
         self.extracted_features = self._extract(x, batch_size=batch_size)
         return self.extracted_features
 
@@ -66,19 +86,8 @@ class FeatureExtractor(object):
         except:
             validation_data = None
 
-        input_dim = self.extracted_features.shape[1]
-
         # train the dense layer
-        self.logistic_model = tf.keras.Sequential()
-        self.logistic_model.add(tf.keras.layers.Dense(10,  # output dim is 10, one score per each class
-                                                      activation='softmax',
-                                                      kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
-                                                      input_dim=input_dim))  # input dimension = number of features your
-        # data has
 
-        self.logistic_model.compile(optimizer='sgd',
-                                    loss='categorical_crossentropy',
-                                    metrics=['accuracy'])
         history = self.logistic_model.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
                                           validation_data=validation_data)
         return history
@@ -91,6 +100,12 @@ class FeatureExtractor(object):
         for layer in self.hub_model.layers:
             layer.trainable = False
 
+    def save_classification_layer(self, path):
+        self.logistic_model.save_weights(path)
+
+    def load_classification_layer(self, path):
+        self.logistic_model.load_weights(path)
+
     @property
     def features(self):
         if not isinstance(self.extracted_features, np.ndarray):
@@ -101,10 +116,10 @@ class FeatureExtractor(object):
 
 class NASNetLargeExtractor(FeatureExtractor):
 
-    def __init__(self):
-        super().__init__(
-            hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
-            input_size=331)
+    def __init__(self, image_size, classes):
+        super().__init__(image_size, classes,
+                         hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
+                         input_size=331)
 
     def extract_fine_tuned_features(self, x, y, epochs=25, batch_size=128, validation_data=None):
         if not self.model_full:
@@ -112,14 +127,8 @@ class NASNetLargeExtractor(FeatureExtractor):
         if not self.logistic_model:
             self.test_feature_quality(y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
-        # fine-tune the network
-        fine_tune_model = tf.keras.Sequential([
-            self.model_full,
-            self.logistic_model
-        ])
-
         # turn on training
-        for layer in fine_tune_model.layers:
+        for layer in self.fine_tune_model.layers:
             layer.trainable = True
 
         # compile the model (should be done *after* setting layers to non-trainable)
@@ -128,10 +137,10 @@ class NASNetLargeExtractor(FeatureExtractor):
             decay_steps=10000,
             decay_rate=0.94,
             staircase=True)
-        fine_tune_model.compile(optimizer=tf.keras.optimizers.RMSprop(lr_schedule, epsilon=1),
-                                loss='categorical_crossentropy',
-                                metrics=['accuracy'])
-        history = fine_tune_model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
+        self.fine_tune_model.compile(optimizer=tf.keras.optimizers.RMSprop(lr_schedule, epsilon=1),
+                                     loss='categorical_crossentropy',
+                                     metrics=['accuracy'])
+        history = self.fine_tune_model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
         # after fine-tuning, return extracted features
         for layer in self.hub_model.layers:
