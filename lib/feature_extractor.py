@@ -57,12 +57,8 @@ class FeatureExtractor(object):
     def extract(self, x, batch_size=128):
         if not isinstance(x, np.ndarray):
             x = np.array(x)
-        self.extracted_features = self._extract(x, batch_size=batch_size)
+        self.extracted_features = self.model_full.predict(x, batch_size=batch_size, verbose=1)
         return self.extracted_features
-
-    def _extract(self, x, batch_size=128):
-
-        return self.model_full.predict(x, batch_size=batch_size, verbose=1)
 
     def save_features(self, path):
         if not isinstance(self.extracted_features, np.ndarray):
@@ -81,7 +77,7 @@ class FeatureExtractor(object):
 
         try:
             (x_test, y_test) = validation_data
-            x_test = self._extract(x_test)
+            x_test = self.extract(x_test)
             validation_data = (x_test, y_test)
         except:
             validation_data = None
