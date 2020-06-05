@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as hub
-from tensorflow.keras.layers import Lambda, Input
+from tensorflow.keras.layers import Lambda, Input, Dense
+
+from .callbacks import MonitorAndSaveParameters
 
 
 class FeatureExtractor(object):
@@ -20,7 +22,7 @@ class FeatureExtractor(object):
         if extractor_path is None:
             self.hub_model = tf.keras.Sequential([
                 hub.KerasLayer(hub_url,
-                               trainable=trainable),
+                               trainable=trainable)
             ])
         else:
             self.hub_model = tf.keras.models.load_model(extractor_path)
@@ -32,13 +34,15 @@ class FeatureExtractor(object):
             Lambda(lambda image: tf.image.resize(image, [self.input_size, self.input_size])),
             self.hub_model
         ])
-        input_dim = self.hub_model.output.shape[-1]
+
         # build softmax classification layer.
         self.logistic_model = tf.keras.Sequential()
-        self.logistic_model.add(tf.keras.layers.Dense(classes,  # output dim is one score per each class
-                                                      activation='softmax',
-                                                      kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
-                                                      input_dim=input_dim))  # input dimension = number of features your
+        self.logistic_model.add(
+            Dense(128, kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1), name="feature_layer"))
+        self.logistic_model.add(Dense(classes,  # output dim is one score per each class
+                                      activation='softmax',
+                                      kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
+                                      ))  # input dimension = number of features your
         # data has;
 
         self.logistic_model.compile(optimizer='sgd',
@@ -52,12 +56,21 @@ class FeatureExtractor(object):
             self.logistic_model
         ])
 
+        # build the compression model, only be used for fine-tuned network.
+        self.compression_model = tf.keras.Sequential([
+            self.model_full,
+            self.logistic_model.get_layer("feature_layer")
+        ])
+
         self.extracted_features = None
 
-    def extract(self, x, batch_size=128):
+    def extract(self, x, batch_size=128, compression=False):
         if not isinstance(x, np.ndarray):
             x = np.array(x)
-        self.extracted_features = self.model_full.predict(x, batch_size=batch_size, verbose=1)
+        if not compression:
+            self.extracted_features = self.model_full.predict(x, batch_size=batch_size, verbose=1)
+        if compression:
+            self.extracted_features = self.compression_model.predict(x, batch_size=batch_size, verbose=1)
         return self.extracted_features
 
     def save_features(self, path):
@@ -75,17 +88,17 @@ class FeatureExtractor(object):
         if not isinstance(self.extracted_features, np.ndarray):
             raise AttributeError("Extracted features not exist, please call .extract() first")
 
-        try:
+        if validation_data:
             (x_test, y_test) = validation_data
             x_test = self.extract(x_test)
             validation_data = (x_test, y_test)
-        except:
-            validation_data = None
 
         # train the dense layer
-
-        history = self.logistic_model.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
-                                          validation_data=validation_data)
+        history = {}
+        default = self.logistic_model.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
+                                          validation_data=validation_data, callbacks=[
+                MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
+        history["default"] = default
         return history
 
     def save_extractor(self, path):
@@ -136,11 +149,15 @@ class NASNetLargeExtractor(FeatureExtractor):
         self.fine_tune_model.compile(optimizer=tf.keras.optimizers.RMSprop(lr_schedule, epsilon=1),
                                      loss='categorical_crossentropy',
                                      metrics=['accuracy'])
-        history = self.fine_tune_model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
+        history = {}
+        default = self.fine_tune_model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
+                                           callbacks=[
+                                               MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
+        history["default"] = default
 
         # after fine-tuning, return extracted features
         for layer in self.hub_model.layers:
             layer.trainable = False
-        self.extract(x, batch_size)
+        features = self.extract(x, batch_size, compression=True)
 
-        return history
+        return history, features
