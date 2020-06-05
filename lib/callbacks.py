@@ -1,9 +1,25 @@
+# -*- coding: utf-8 -*-
+"""Self-defined Keras callbacks.
+
+This module provides dedicated Keras callbacks classes to monitor the training process (model.fit() method) and calculate
+the real validation loss and accuracy across the whole validation set. Also, the best model is kept while training based
+on validation performance.
+"""
+
 import numpy as np
 import tensorflow as tf
 
 
 class MonitorAndSaveParameters(tf.keras.callbacks.Callback):
+    """Calculate real performance and kept the best model weights based on validation performance"""
+
     def __init__(self, metrics, batch_size, val_samples):
+        """Init a new callback instance.
+
+        :param metrics: a dict object to save processed metrics like loss and accuracy.
+        :param batch_size: the size of the mini-batch.
+        :param val_samples: number of validation samples.
+        """
         super().__init__()
 
         if isinstance(metrics, dict):
@@ -60,11 +76,7 @@ class MonitorAndSaveParameters(tf.keras.callbacks.Callback):
             else:
                 avg_valid_loss = self.valid_loss[0]
                 avg_valid_acc = self.valid_acc[0]
-            # print(self.valid_loss)
-            # print(self.valid_acc)
-            # print("Epoch: {} finished. The average validation loss is: {}. The validation accuracy is: {}".format(epoch,
-            #                                                                                                       avg_valid_loss,
-            #                                                                                                       avg_valid_acc))
+
             if "val_loss" in self.metrics.keys():
                 self.metrics["val_loss"].append(avg_valid_loss)
             else:
