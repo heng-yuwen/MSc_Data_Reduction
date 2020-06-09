@@ -20,16 +20,21 @@ from .callbacks import MonitorAndSaveParameters
 class FeatureExtractor(object):
     """Generic feature extractor."""
 
-    def __init__(self, image_size, classes, hub_url=None, extractor_path=None, trainable=False, input_size=224):
+    def __init__(self, image_size, model_path, data_path, hub_url=None, extractor_path=None, trainable=False,
+                 input_size=224):
         """Create a  new  feature extractor instance.
 
+        :param data_path: the the directory of extracted features.
+        :param model_path: the directory of trained model parameters.
         :param image_size: the size of the input image, which should be a square matrix.
-        :param classes: the number of classes of the images.
         :param hub_url: the url of the pre-trained extractor from TF Hub.
         :param extractor_path: the path of the saved extractor weights.
         :param trainable: whether to freeze the extractor weights or not.
         :param input_size: the input layer shape of the extractor.
         """
+
+        self.model_path = model_path
+        self.data_path = data_path
 
         # build the extractor.
         self.extractor = tf.keras.Sequential([
@@ -61,9 +66,11 @@ class FeatureExtractor(object):
         if not isinstance(x, np.ndarray):
             x = np.array(x)
         if not compression:
+            print("Extracting features...")
             features = self.extractor.predict(x, batch_size=batch_size, verbose=1)
             self.extracted_features = features
         if compression:
+            print("Compressing features...")
             features = self.compressor.predict(x, batch_size=batch_size, verbose=1)
             self.extracted_compressed_features = features
 
@@ -78,29 +85,44 @@ class FeatureExtractor(object):
         """
         return self.extractor.predict(x, batch_size=batch_size, verbose=1)
 
-    def save_features(self, path):
+    def save_features(self, train=True, valid=True, compressed=True):
         """Save the extracted features to the given path.
 
-        :param path: the path of the file, use ".csv" as the file format.
+        :param compressed: weather to save compressed features or not
+        :param valid: weather to save validation features or not
+        :param train: weather to save training features or not
         """
-        if isinstance(self.extracted_features, np.ndarray):
-            pd.DataFrame(self.extracted_features).to_csv(os.path.join(path, "extracted_train.csv"), index=False)
+
+        if isinstance(self.extracted_features, np.ndarray) and train:
+            pd.DataFrame(self.extracted_features).to_csv(os.path.join(self.data_path, "extracted_train.csv"),
+                                                         index=False)
             print("Extracted training set features saved")
-        if isinstance(self.extracted_valid_features, np.ndarray):
-            pd.DataFrame(self.extracted_features).to_csv(os.path.join(path, "extracted_valid.csv"), index=False)
+        if isinstance(self.extracted_valid_features, np.ndarray) and valid:
+            pd.DataFrame(self.extracted_valid_features).to_csv(os.path.join(self.data_path, "extracted_valid.csv"),
+                                                               index=False)
             print("Extracted validation set features saved")
-        if isinstance(self.extracted_compressed_features, np.ndarray):
-            pd.DataFrame(self.extracted_features).to_csv(os.path.join(path, "compressed_train.csv"), index=False)
+        if isinstance(self.extracted_compressed_features, np.ndarray) and compressed:
+            pd.DataFrame(self.extracted_compressed_features).to_csv(
+                os.path.join(self.data_path, "compressed_train.csv"), index=False)
             print("Compressed training set features saved")
 
-    def load_features(self, path):
-        """Load the saved features.
+    def load_features(self):
+        """Load the saved features."""
 
-        :param path: the path of the sav`ed feature file, use them to fine-tune the classifier.
-        """
-        self.extracted_features = pd.read_csv(path, index_col=False).values
+        if os.path.exists(os.path.join(self.data_path, "extracted_train.csv")):
+            self.extracted_features = pd.read_csv(os.path.join(self.data_path, "extracted_train.csv"),
+                                                  index_col=False).values
+            print("Extracted training set features loaded")
+        if os.path.exists(os.path.join(self.data_path, "extracted_valid.csv")):
+            self.extracted_valid_features = pd.read_csv(os.path.join(self.data_path, "extracted_valid.csv"),
+                                                        index_col=False).values
+            print("Extracted validation set loaded")
+        if os.path.exists(os.path.join(self.data_path, "compressed_train.csv")):
+            self.extracted_compressed_features = pd.read_csv(os.path.join(self.data_path, "compressed_train.csv"),
+                                                             index_col=False).values
+            print("Compressed training set features loaded")
 
-    def train_classifier(self, y, epochs=25, batch_size=128, validation_data=None):
+    def train_classifier(self, y, epochs=25, batch_size=128, validation_data=None, early_stop=True):
         """Train the classifier with the extracted features and report performance.
 
         :param y: training set labels.
@@ -119,45 +141,60 @@ class FeatureExtractor(object):
             validation_data = (self.extracted_valid_features, y_valid)
 
         # train the classifier
-        history = {}
-        default = self.classifier.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
-                                      validation_data=validation_data, callbacks=[
-                MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
-        history["default"] = default
+        history = self.train(self.classifier, self.extracted_features, y, epochs=epochs, batch_size=batch_size,
+                             validation_data=validation_data, early_stop=early_stop)
+        # default = self.classifier.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
+        #                               validation_data=validation_data, callbacks=[
+        #         MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
+        # history["default"] = default
         return history
 
-    def save_extractor(self, path):
-        """Save the extractor to the given path.
+    def save_extractor(self):
+        """Save the extractor to the given path."""
 
-        :param path: path string, with format ".h5".
-        """
-        self.extractor.save_weights(os.path.join(path, "extractor.h5"))
+        self.extractor.save_weights(os.path.join(self.model_path, "extractor.h5"))
+        print("Extractor saved")
 
-    def load_extractor(self, path):
-        """Load the extractor.
+    def load_extractor(self):
+        """Load the extractor."""
 
-        :param path: path string, with format ".h5".
-        """
-        self.extractor.load_weights(os.path.join(path, "extractor.h5"))
+        self.extractor.load_weights(os.path.join(self.model_path, "extractor.h5"))
         for layer in self.extractor.layers:
             layer.trainable = False
+        print("Extractor loaded")
 
-    def save_classifier(self, path):
-        """Save the classifier.
+    def save_classifier(self):
+        """Save the classifier."""
 
-        :param path: path string, with format ".h5".
-        :return:
+        self.compressor_layer.save_weights(os.path.join(self.model_path, "compressor.h5"))
+        self.classifier_layer.save_weights(os.path.join(self.model_path, "classifier.h5"))
+        print("Classifier saved")
+
+    def load_classifier(self):
+        """Load the classifier."""
+
+        self.compressor_layer.load_weights(os.path.join(self.model_path, "compressor.h5"))
+        self.classifier_layer.load_weights(os.path.join(self.model_path, "classifier.h5"))
+        print("Classifier loaded")
+
+    def save_history(self, history, name):
+        """Save the training history to a file
+
+        :param history: the history dict returned while training models.
+        :param name: the name of the file.
         """
-        self.compressor_layer.save_weights(os.path.join(path, "compressor.h5"))
-        self.classifier_layer.save_weights(os.path.join(path, "classifier.h5"))
+        np.save(os.path.join(self.model_path, name + ".npy"), history)
+        print("History saved.")
 
-    def load_classifier(self, path):
-        """Load the classifier.
-
-        :param path: path string, with format ".h5".
-        """
-        self.compressor_layer.load_weights(os.path.join(path, "compressor.h5"))
-        self.classifier_layer.load_weights(os.path.join(path, "classifier.h5"))
+    def train(self, model, x, y, epochs=25, batch_size=128, validation_data=None, early_stop=False):
+        history = {}
+        default = model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
+                            callbacks=[
+                                MonitorAndSaveParameters(history, batch_size, len(validation_data[0]),
+                                                         early_stop=early_stop)])
+        history["acc"] = default.history["accuracy"]
+        history["loss"] = default.history["loss"]
+        return history
 
     @property
     def features(self):
@@ -171,15 +208,15 @@ class FeatureExtractor(object):
 class NASNetLargeExtractor(FeatureExtractor):
     """Build the extractor with pre-trained NASNetLarge model"""
 
-    def __init__(self, image_size, classes):
+    def __init__(self, image_size, classes, model_path, data_path):
         """ init a new NASNetLarge extractor instance.
 
         :param image_size: the size of the input image, which should be a square matrix.
         :param classes: the number of classes of the images.
         """
-        super().__init__(image_size, classes,
+        super().__init__(image_size,
                          hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
-                         input_size=331)
+                         input_size=331, model_path=model_path, data_path=data_path)
 
         # build the compression layer to encode the features a step further.
         self.compressor_layer = tf.keras.Sequential([
@@ -219,9 +256,12 @@ class NASNetLargeExtractor(FeatureExtractor):
             self.compressor_layer,
         ])
 
-    def extract_fine_tuned_features(self, x, y, epochs=25, batch_size=128, validation_data=None):
+    def fine_tune_features(self, x, y, learning_rate=0.0001, weight_decay=0.01, epochs=25, batch_size=128,
+                           validation_data=None, early_stop=False):
         """fine-tune the model and extract compressed features.
 
+        :param weight_decay: the l2 regularization weight decay.
+        :param learning_rate: the learning rate of SGD.
         :param x: training images.
         :param y: training set labels.
         :param epochs: the number of epochs to train the classifier.
@@ -229,34 +269,37 @@ class NASNetLargeExtractor(FeatureExtractor):
         :param validation_data: the validation set used to tune the networks.
         """
 
-        # extract features and train the classifier.
-        if not isinstance(self.extracted_features, np.ndarray):
-            self.extract(x, batch_size)
-        if not self.classifier:
-            self.train_classifier(y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
+        # load trained parameters
+        self.load_classifier()
+        self.load_extractor()
+
+        # # load extracted features
+        # self.load_features()
+
+        # l2 regularisation.
+        regularizer = tf.keras.regularizers.l2(weight_decay)
 
         # turn on training
         for layer in self.model.layers:
             layer.trainable = True
+            for attr in ['kernel_regularizer']:
+                if hasattr(layer, attr):
+                    setattr(layer, attr, regularizer)
 
         # compile the model (should be done *after* setting layers to non-trainable)
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=0.045,
-            decay_steps=1000,
-            decay_rate=0.94,
-            staircase=True)
-        self.model.compile(optimizer=tf.keras.optimizers.RMSprop(lr_schedule, epsilon=1),
+        self.model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate, momentum=0.9, nesterov=True),
                            loss='categorical_crossentropy',
                            metrics=['accuracy'])
-        history = {}
-        default = self.model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
-                                 callbacks=[
-                                     MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
-        history["default"] = default
+        history = self.train(self.model, x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
+                             early_stop=early_stop)
+        # default = self.model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
+        #                          callbacks=[
+        #                              MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
+        # history["default"] = default
 
         # after fine-tuning, return extracted features
         for layer in self.extractor.layers:
             layer.trainable = False
-        features = self.extract(x, batch_size, compression=True)
+        # features = self.extract(x, batch_size, compression=True)
 
-        return history, features
+        return history

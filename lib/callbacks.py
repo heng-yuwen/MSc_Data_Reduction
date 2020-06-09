@@ -13,7 +13,7 @@ import tensorflow as tf
 class MonitorAndSaveParameters(tf.keras.callbacks.Callback):
     """Calculate real performance and kept the best model weights based on validation performance"""
 
-    def __init__(self, metrics, batch_size, val_samples):
+    def __init__(self, metrics, batch_size, val_samples, early_stop=False):
         """Init a new callback instance.
 
         :param metrics: a dict object to save processed metrics like loss and accuracy.
@@ -35,6 +35,7 @@ class MonitorAndSaveParameters(tf.keras.callbacks.Callback):
         self.batch_size = batch_size
         self.val_samples = val_samples
         self.residual_samples = val_samples % batch_size
+        self.early_stop = early_stop
         if self.residual_samples == 0:
             self.residual_samples = batch_size
 
@@ -90,12 +91,13 @@ class MonitorAndSaveParameters(tf.keras.callbacks.Callback):
             # save the model weights if the acc is higher than record.
             if avg_valid_acc >= self.max_acc:
                 self.max_acc = avg_valid_acc
-                self.best_weights = self.model.get_weights()
+                if self.early_stop:
+                    self.best_weights = self.model.get_weights()
             self.valid_loss = np.array([])
             self.valid_acc = np.array([])
 
     # called at the end of the training
     def on_train_end(self, logs=None):
-        if self.max_acc > 0:
+        if self.max_acc > 0 and self.early_stop:
             self.model.set_weights(self.best_weights)
             print("Restoring best model weights with validation accuracy: {}".format(self.max_acc))
