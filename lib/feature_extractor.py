@@ -42,7 +42,7 @@ class FeatureExtractor(object):
             Dense(128, kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1)),
             BatchNormalization()
         ])
-        self.compressor_layer.build([None, self.extractor.output_shape[-1]])
+        self.compressor_layer.build([None, 4032])
 
         # build softmax classification layers.
         self.classifier_layer = tf.keras.Sequential([
@@ -51,7 +51,7 @@ class FeatureExtractor(object):
                   kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
                   )
         ])
-        self.classifier_layer.build([None, self.compressor_layer.output_shape[-1]])
+        self.classifier_layer.build([None, 128])
 
         # build the full model (add resize image layer to fit the input shape of the extractor)
         self.model = tf.keras.Sequential([
@@ -169,7 +169,8 @@ class FeatureExtractor(object):
         :param path: path string, with format ".h5".
         :return:
         """
-        self.classifier.save_weights(path)
+        self.compressor_layer.save_weights(path)
+        self.classifier_layer.save_weights(path)
 
     def load_classifier(self, path):
         """Load the classifier.
