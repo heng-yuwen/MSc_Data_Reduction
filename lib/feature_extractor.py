@@ -62,7 +62,7 @@ class FeatureExtractor(object):
                                   kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
                                   ))
 
-        self.classifier.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+        self.classifier.compile(optimizer="sgd",
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
 
