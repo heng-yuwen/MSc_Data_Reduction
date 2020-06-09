@@ -6,11 +6,13 @@ This module provides classes for extracting features from raw image inputs with 
 (https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4).
 """
 
+import os
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as hub
-from tensorflow.keras.layers import Lambda, Input, Dense, BatchNormalization
+from tensorflow.keras.layers import Lambda, Dense, BatchNormalization
 
 from .callbacks import MonitorAndSaveParameters
 
@@ -18,69 +20,60 @@ from .callbacks import MonitorAndSaveParameters
 class FeatureExtractor(object):
     """Generic feature extractor."""
 
-    def __init__(self, image_size, classes, hub_url=None, extractor_path=None, trainable=False, input_size=224):
+    def __init__(self, image_size, classes, hub_url=None, trainable=False, input_size=224,
+                 data_name="default"):
         """Create a  new  feature extractor instance.
 
         :param image_size: the size of the input image, which should be a square matrix.
         :param classes: the number of classes of the images.
         :param hub_url: the url of the pre-trained extractor from TF Hub.
-        :param extractor_path: the path of the saved extractor weights.
         :param trainable: whether to freeze the extractor weights or not.
         :param input_size: the input layer shape of the extractor.
+        :param data_name: the name of the dataset, used as the dataset folder name.
         """
 
-        # build the extractor.
-        self.input_size = input_size
-        if extractor_path is None:
-            self.extractor = tf.keras.Sequential([
-                hub.KerasLayer(hub_url,
-                               trainable=trainable)
-            ])
-        else:
-            self.extractor = tf.keras.models.load_model(extractor_path)
-        self.extractor.build([None, self.input_size, self.input_size, 3])
+        self.data_name = data_name
 
-        # build the full model (add resize image layer to fit the input shape of the extractor)
-        self.model_full = None
-        self.model_full = tf.keras.Sequential([
-            Input(shape=(image_size, image_size, 3)),
+        # build the whole model.
+        self.input_size = input_size
+        self.model = tf.keras.Sequential([
             Lambda(lambda image: tf.image.resize(image, [self.input_size, self.input_size])),
-            self.extractor
+            hub.KerasLayer(hub_url,
+                           trainable=trainable, name="extractor"),
+            Dense(128, kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1), name="classifier"),
+            BatchNormalization(name="compressor"),
+            Dense(classes,  # output dim is one score per each class
+                  activation='softmax',
+                  kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
+                  )
+        ])
+        self.model.build([None, self.input_size, self.input_size, 3])
+
+        # build the extractor
+        self.extractor = tf.keras.Sequential([
+            self.model.input,
+            self.model.get_layer("extractor")
         ])
 
-        # build the compression layer to encode the features a step further.
-        self.compressor = tf.keras.Sequential()
-        self.compressor.add(
-            Dense(128, kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1)))
-        self.compressor.add(BatchNormalization())
-
-        # build softmax classification layers.
-        self.classifier = tf.keras.Sequential()
-        self.classifier.add(self.compressor)
-        self.classifier.add(Dense(classes,  # output dim is one score per each class
-                                  activation='softmax',
-                                  kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
-                                  ))
-
+        # build the classifier
+        self.classifier = tf.keras.Sequential([
+            self.model.get_layer("classifier"),
+            self.model.output
+        ])
         self.classifier.compile(optimizer="sgd",
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
 
-        # build fine-tune model to train all the layers.
-        self.fine_tune_model = tf.keras.Sequential([
-            self.model_full,
-            self.classifier
-        ])
-
         # build the compression model, only be used for fine-tuned network.
-        self.compression_model = tf.keras.Sequential([
-            self.model_full,
-            self.compressor
+        self.compressor = tf.keras.Sequential([
+            self.model.input,
+            self.model.get_layer("compressor")
         ])
 
         # save the extracted features.
         self.extracted_features = None
         self.extracted_valid_features = None
+        self.extracted_compressed_features = None
 
     def extract(self, x, batch_size=128, compression=False):
         """Extract the features from training images.
@@ -93,9 +86,9 @@ class FeatureExtractor(object):
         if not isinstance(x, np.ndarray):
             x = np.array(x)
         if not compression:
-            self.extracted_features = self.model_full.predict(x, batch_size=batch_size, verbose=1)
+            self.extracted_features = self.extractor.predict(x, batch_size=batch_size, verbose=1)
         if compression:
-            self.extracted_features = self.compression_model.predict(x, batch_size=batch_size, verbose=1)
+            self.extracted_compressed_features = self.compressor.predict(x, batch_size=batch_size, verbose=1)
         return self.extracted_features
 
     def _extract(self, x, batch_size):
@@ -105,7 +98,7 @@ class FeatureExtractor(object):
         :param batch_size: the size of the mini-batch.
         :return: extracted features.
         """
-        return self.model_full.predict(x, batch_size=batch_size, verbose=1)
+        return self.extractor.predict(x, batch_size=batch_size, verbose=1)
 
     def save_features(self, path):
         """Save the extracted features to the given path.
@@ -114,8 +107,14 @@ class FeatureExtractor(object):
         """
         if not isinstance(self.extracted_features, np.ndarray):
             raise AttributeError("Extracted features not exist, please call .extract() first")
-        else:
-            pd.DataFrame(self.extracted_features).to_csv(path, index=False)
+        if not isinstance(self.extracted_valid_features, np.ndarray):
+            raise AttributeError("Extracted validation features not exist, please call .test_feature_quality() first")
+
+        # save extracted features.
+        pd.DataFrame(self.extracted_features).to_csv(os.path.join(path, "train_features_not_compressed.csv"),
+                                                     index=False)
+        pd.DataFrame(self.extracted_valid_features).to_csv(os.path.join(path, "val_features_not_compressed.csv"),
+                                                           index=False)
 
     def load_features(self, path):
         """Load the saved features.
@@ -124,7 +123,7 @@ class FeatureExtractor(object):
         """
         self.extracted_features = pd.read_csv(path, index_col=False).values
 
-    def test_feature_quality(self, y, epochs=25, batch_size=128, validation_data=None):
+    def train_classifier(self, y, epochs=25, batch_size=128, validation_data=None):
         """Train the classifier with the extracted features and report performance.
 
         :param y: training set labels.
@@ -172,7 +171,7 @@ class FeatureExtractor(object):
         :param path: path string, with format ".h5".
         :return:
         """
-        self.classifier.save_weights(path)
+        self.classifier.save_weights(os.path.join(path, "classifier.h5"))
 
     def load_classifier(self, path):
         """Load the classifier.
@@ -180,6 +179,23 @@ class FeatureExtractor(object):
         :param path: path string, with format ".h5".
         """
         self.classifier.load_weights(path)
+
+    def save_uncompressed(self):
+        """Save the features and extracted features"""
+
+        # create data folder.
+        if not os.path.exists(self.data_name):
+            os.mkdir(self.data_name)
+            print("Directory ", self.data_name, " Created ")
+
+        print("Saving model parameters and extracted features to directory: ", self.data_name)
+
+        # save extracted features.
+        self.save_features(self.data_name)
+        print("Uncompressed features saved successfully.")
+
+        # save model parameters
+        self.save_classifier(self.data_name)
 
     @property
     def features(self):
@@ -193,7 +209,7 @@ class FeatureExtractor(object):
 class NASNetLargeExtractor(FeatureExtractor):
     """Build the extractor with pre-trained NASNetLarge model"""
 
-    def __init__(self, image_size, classes):
+    def __init__(self, image_size, classes, data_name="default"):
         """ init a new NASNetLarge extractor instance.
 
         :param image_size: the size of the input image, which should be a square matrix.
@@ -201,7 +217,7 @@ class NASNetLargeExtractor(FeatureExtractor):
         """
         super().__init__(image_size, classes,
                          hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
-                         input_size=331)
+                         input_size=331, data_name=data_name)
 
     def extract_fine_tuned_features(self, x, y, epochs=25, batch_size=128, validation_data=None):
         """fine-tune the model and extract compressed features.
@@ -214,13 +230,13 @@ class NASNetLargeExtractor(FeatureExtractor):
         """
 
         # extract features and train the classifier.
-        if not self.model_full:
+        if not isinstance(self.extracted_features, np.ndarray):
             self.extract(x, batch_size)
         if not self.classifier:
-            self.test_feature_quality(y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
+            self.train_classifier(y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
         # turn on training
-        for layer in self.fine_tune_model.layers:
+        for layer in self.extractor.layers:
             layer.trainable = True
 
         # compile the model (should be done *after* setting layers to non-trainable)
@@ -229,13 +245,13 @@ class NASNetLargeExtractor(FeatureExtractor):
             decay_steps=1000,
             decay_rate=0.94,
             staircase=True)
-        self.fine_tune_model.compile(optimizer=tf.keras.optimizers.RMSprop(lr_schedule, epsilon=1),
-                                     loss='categorical_crossentropy',
-                                     metrics=['accuracy'])
+        self.model.compile(optimizer=tf.keras.optimizers.RMSprop(lr_schedule, epsilon=1),
+                           loss='categorical_crossentropy',
+                           metrics=['accuracy'])
         history = {}
-        default = self.fine_tune_model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
-                                           callbacks=[
-                                               MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
+        default = self.model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
+                                 callbacks=[
+                                     MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
         history["default"] = default
 
         # after fine-tuning, return extracted features
