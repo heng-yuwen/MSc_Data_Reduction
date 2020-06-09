@@ -35,9 +35,8 @@ class FeatureExtractor(object):
         self.data_name = data_name
 
         # build the whole model.
-        self.input_size = input_size
         self.model = tf.keras.Sequential([
-            Lambda(lambda image: tf.image.resize(image, [self.input_size, self.input_size])),
+            Lambda(lambda image: tf.image.resize(image, [input_size, input_size])),
             hub.KerasLayer(hub_url,
                            trainable=trainable, name="extractor"),
             Dense(128, kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1), name="classifier"),
@@ -47,7 +46,7 @@ class FeatureExtractor(object):
                   kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
                   )
         ])
-        self.model.build([None, self.input_size, self.input_size, 3])
+        self.model.build([None, image_size, image_size, 3])
 
         # build the extractor
         self.extractor = tf.keras.Sequential([
