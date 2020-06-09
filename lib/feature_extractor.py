@@ -12,7 +12,11 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as hub
+<<<<<<< HEAD
 from tensorflow.keras.layers import Lambda, Dense, BatchNormalization, Input
+=======
+from tensorflow.keras.layers import Lambda, Dense, BatchNormalization
+>>>>>>> ceb7b2c... Fix bugs
 
 from .callbacks import MonitorAndSaveParameters
 
@@ -32,6 +36,7 @@ class FeatureExtractor(object):
         :param data_name: the name of the dataset, used as the dataset folder name.
         """
 
+<<<<<<< HEAD
         self.data_name = data_name
 
         # build the whole model.
@@ -59,6 +64,43 @@ class FeatureExtractor(object):
         self.classifier = tf.keras.Sequential([
             self.model.get_layer("classifier"),
             self.model.output
+=======
+        # build the extractor.
+        self.extractor = tf.keras.Sequential([
+            Lambda(lambda image: tf.image.resize(image, [input_size, input_size])),
+            hub.KerasLayer(hub_url,
+                           trainable=trainable)
+        ])
+        self.extractor.build([None, image_size, image_size, 3])
+
+        # build the compression layer to encode the features a step further.
+        self.compressor_layer = tf.keras.Sequential([
+            Dense(128, kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1)),
+            BatchNormalization()
+        ])
+        self.compressor_layer.build([None, self.extractor.output_shape[-1]])
+
+        # build softmax classification layers.
+        self.classifier_layer = tf.keras.Sequential([
+            Dense(classes,  # output dim is one score per each class
+                  activation='softmax',
+                  kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
+                  )
+        ])
+        self.classifier_layer.build([None, self.compressor_layer.output_shape[-1]])
+
+        # build the full model (add resize image layer to fit the input shape of the extractor)
+        self.model = tf.keras.Sequential([
+            self.extractor,
+            self.compressor_layer,
+            self.classifier_layer
+        ])
+
+        # build softmax classification layers.
+        self.classifier = tf.keras.Sequential([
+            self.compressor_layer,
+            self.classifier_layer
+>>>>>>> ceb7b2c... Fix bugs
         ])
         self.classifier.compile(optimizer="sgd",
                                 loss='categorical_crossentropy',
@@ -66,8 +108,13 @@ class FeatureExtractor(object):
 
         # build the compression model, only be used for fine-tuned network.
         self.compressor = tf.keras.Sequential([
+<<<<<<< HEAD
             self.model.input,
             self.model.get_layer("compressor")
+=======
+            self.extractor,
+            self.compressor_layer,
+>>>>>>> ceb7b2c... Fix bugs
         ])
 
         # save the extracted features.
@@ -88,7 +135,11 @@ class FeatureExtractor(object):
         if not compression:
             self.extracted_features = self.extractor.predict(x, batch_size=batch_size, verbose=1)
         if compression:
+<<<<<<< HEAD
             self.extracted_compressed_features = self.compressor.predict(x, batch_size=batch_size, verbose=1)
+=======
+            self.extracted_features = self.compressor.predict(x, batch_size=batch_size, verbose=1)
+>>>>>>> ceb7b2c... Fix bugs
         return self.extracted_features
 
     def _extract(self, x, batch_size):
@@ -236,7 +287,11 @@ class NASNetLargeExtractor(FeatureExtractor):
             self.train_classifier(y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
         # turn on training
+<<<<<<< HEAD
         for layer in self.extractor.layers:
+=======
+        for layer in self.model.layers:
+>>>>>>> ceb7b2c... Fix bugs
             layer.trainable = True
 
         # compile the model (should be done *after* setting layers to non-trainable)
