@@ -62,7 +62,7 @@ class FeatureExtractor(object):
                                   kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
                                   ))
 
-        self.classifier.compile(optimizer=tf.keras.optimizers.Adam(),
+        self.classifier.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
 
@@ -80,6 +80,7 @@ class FeatureExtractor(object):
 
         # save the extracted features.
         self.extracted_features = None
+        self.extracted_valid_features = None
 
     def extract(self, x, batch_size=128, compression=False):
         """Extract the features from training images.
@@ -135,10 +136,11 @@ class FeatureExtractor(object):
             raise AttributeError("Extracted features not exist, please call .extract() first")
         # extract features for validation data.
         if validation_data:
-            print("Extracting features for validation data")
             (x_valid, y_valid) = validation_data
-            x_valid = self._extract(x_valid, batch_size)
-            validation_data = (x_valid, y_valid)
+            if not isinstance(self.extracted_valid_features, np.ndarray):
+                print("Extracting features for validation data")
+                self.extracted_valid_features = self._extract(x_valid, batch_size)
+            validation_data = (self.extracted_valid_features, y_valid)
 
         # train the classifier
         history = {}
