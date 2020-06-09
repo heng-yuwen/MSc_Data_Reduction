@@ -6,6 +6,8 @@ This module provides classes for extracting features from raw image inputs with 
 (https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4).
 """
 
+import os
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -36,6 +38,148 @@ class FeatureExtractor(object):
                            trainable=trainable)
         ])
         self.extractor.build([None, image_size, image_size, 3])
+
+        self.compressor_layer = None
+        self.classifier_layer = None
+
+        self.compressor = None
+        self.classifier = None
+        # save the extracted features.
+        self.extracted_features = None
+        self.extracted_valid_features = None
+        self.extracted_compressed_features = None
+
+    def extract(self, x, batch_size=128, compression=False):
+        """Extract the features from training images.
+
+        :param x: training images.
+        :param batch_size: the size of the mini-batch.
+        :param compression: compress the features or not, default False, please first train the compressor layer first.
+        :return: extracted features.
+        """
+        features = None
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+        if not compression:
+            features = self.extractor.predict(x, batch_size=batch_size, verbose=1)
+            self.extracted_features = features
+        if compression:
+            features = self.compressor.predict(x, batch_size=batch_size, verbose=1)
+            self.extracted_compressed_features = features
+
+        return features
+
+    def _extract(self, x, batch_size):
+        """Extract features from extractor without compression.
+
+        :param x: any images.
+        :param batch_size: the size of the mini-batch.
+        :return: extracted features.
+        """
+        return self.extractor.predict(x, batch_size=batch_size, verbose=1)
+
+    def save_features(self, path):
+        """Save the extracted features to the given path.
+
+        :param path: the path of the file, use ".csv" as the file format.
+        """
+        if isinstance(self.extracted_features, np.ndarray):
+            pd.DataFrame(self.extracted_features).to_csv(os.path.join(path, "extracted_train.csv"), index=False)
+            print("Extracted training set features saved")
+        if isinstance(self.extracted_valid_features, np.ndarray):
+            pd.DataFrame(self.extracted_features).to_csv(os.path.join(path, "extracted_valid.csv"), index=False)
+            print("Extracted validation set features saved")
+        if isinstance(self.extracted_compressed_features, np.ndarray):
+            pd.DataFrame(self.extracted_features).to_csv(os.path.join(path, "compressed_train.csv"), index=False)
+            print("Compressed training set features saved")
+
+    def load_features(self, path):
+        """Load the saved features.
+
+        :param path: the path of the sav`ed feature file, use them to fine-tune the classifier.
+        """
+        self.extracted_features = pd.read_csv(path, index_col=False).values
+
+    def train_classifier(self, y, epochs=25, batch_size=128, validation_data=None):
+        """Train the classifier with the extracted features and report performance.
+
+        :param y: training set labels.
+        :param epochs: the number of epochs to train the classifier.
+        :param batch_size: the size of the mini-batch.
+        :param validation_data: the validation set used to tune the networks.
+        """
+        if not isinstance(self.extracted_features, np.ndarray):
+            raise AttributeError("Extracted features not exist, please call .extract() first")
+        # extract features for validation data.
+        if validation_data:
+            (x_valid, y_valid) = validation_data
+            if not isinstance(self.extracted_valid_features, np.ndarray):
+                print("Extracting features for validation data")
+                self.extracted_valid_features = self._extract(x_valid, batch_size)
+            validation_data = (self.extracted_valid_features, y_valid)
+
+        # train the classifier
+        history = {}
+        default = self.classifier.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
+                                      validation_data=validation_data, callbacks=[
+                MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
+        history["default"] = default
+        return history
+
+    def save_extractor(self, path):
+        """Save the extractor to the given path.
+
+        :param path: path string, with format ".h5".
+        """
+        self.extractor.save_weights(os.path.join(path, "extractor.h5"))
+
+    def load_extractor(self, path):
+        """Load the extractor.
+
+        :param path: path string, with format ".h5".
+        """
+        self.extractor.load_weights(os.path.join(path, "extractor.h5"))
+        for layer in self.extractor.layers:
+            layer.trainable = False
+
+    def save_classifier(self, path):
+        """Save the classifier.
+
+        :param path: path string, with format ".h5".
+        :return:
+        """
+        self.compressor_layer.save_weights(os.path.join(path, "compressor.h5"))
+        self.classifier_layer.save_weights(os.path.join(path, "classifier.h5"))
+
+    def load_classifier(self, path):
+        """Load the classifier.
+
+        :param path: path string, with format ".h5".
+        """
+        self.compressor_layer.load_weights(os.path.join(path, "compressor.h5"))
+        self.classifier_layer.load_weights(os.path.join(path, "classifier.h5"))
+
+    @property
+    def features(self):
+        """Get the extracted features"""
+        if not isinstance(self.extracted_features, np.ndarray):
+            raise AttributeError("Extracted features not exist, please call .extract() first")
+
+        return self.extracted_features
+
+
+class NASNetLargeExtractor(FeatureExtractor):
+    """Build the extractor with pre-trained NASNetLarge model"""
+
+    def __init__(self, image_size, classes):
+        """ init a new NASNetLarge extractor instance.
+
+        :param image_size: the size of the input image, which should be a square matrix.
+        :param classes: the number of classes of the images.
+        """
+        super().__init__(image_size, classes,
+                         hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
+                         input_size=331)
 
         # build the compression layer to encode the features a step further.
         self.compressor_layer = tf.keras.Sequential([
@@ -74,132 +218,6 @@ class FeatureExtractor(object):
             self.extractor,
             self.compressor_layer,
         ])
-
-        # save the extracted features.
-        self.extracted_features = None
-        self.extracted_valid_features = None
-
-    def extract(self, x, batch_size=128, compression=False):
-        """Extract the features from training images.
-
-        :param x: training images.
-        :param batch_size: the size of the mini-batch.
-        :param compression: compress the features or not, default False, please first train the compressor layer first.
-        :return: extracted features.
-        """
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
-        if not compression:
-            self.extracted_features = self.extractor.predict(x, batch_size=batch_size, verbose=1)
-        if compression:
-            self.extracted_features = self.compressor.predict(x, batch_size=batch_size, verbose=1)
-        return self.extracted_features
-
-    def _extract(self, x, batch_size):
-        """Extract features from extractor without compression.
-
-        :param x: any images.
-        :param batch_size: the size of the mini-batch.
-        :return: extracted features.
-        """
-        return self.extractor.predict(x, batch_size=batch_size, verbose=1)
-
-    def save_features(self, path):
-        """Save the extracted features to the given path.
-
-        :param path: the path of the file, use ".csv" as the file format.
-        """
-        if not isinstance(self.extracted_features, np.ndarray):
-            raise AttributeError("Extracted features not exist, please call .extract() first")
-        else:
-            pd.DataFrame(self.extracted_features).to_csv(path, index=False)
-
-    def load_features(self, path):
-        """Load the saved features.
-
-        :param path: the path of the saved feature file, use them to fine-tune the classifier.
-        """
-        self.extracted_features = pd.read_csv(path, index_col=False).values
-
-    def train_classifier(self, y, epochs=25, batch_size=128, validation_data=None):
-        """Train the classifier with the extracted features and report performance.
-
-        :param y: training set labels.
-        :param epochs: the number of epochs to train the classifier.
-        :param batch_size: the size of the mini-batch.
-        :param validation_data: the validation set used to tune the networks.
-        """
-        if not isinstance(self.extracted_features, np.ndarray):
-            raise AttributeError("Extracted features not exist, please call .extract() first")
-        # extract features for validation data.
-        if validation_data:
-            (x_valid, y_valid) = validation_data
-            if not isinstance(self.extracted_valid_features, np.ndarray):
-                print("Extracting features for validation data")
-                self.extracted_valid_features = self._extract(x_valid, batch_size)
-            validation_data = (self.extracted_valid_features, y_valid)
-
-        # train the classifier
-        history = {}
-        default = self.classifier.fit(self.extracted_features, y, epochs=epochs, batch_size=batch_size,
-                                      validation_data=validation_data, callbacks=[
-                MonitorAndSaveParameters(history, batch_size, len(validation_data[0]))])
-        history["default"] = default
-        return history
-
-    def save_extractor(self, path):
-        """Save the extractor to the given path.
-
-        :param path: path string, with format ".h5".
-        """
-        self.extractor.save_weights(path)
-
-    def load_extractor(self, path):
-        """Load the extractor.
-
-        :param path: path string, with format ".h5".
-        """
-        self.extractor.load_weights(path)
-        for layer in self.extractor.layers:
-            layer.trainable = False
-
-    def save_classifier(self, path):
-        """Save the classifier.
-
-        :param path: path string, with format ".h5".
-        :return:
-        """
-        self.compressor_layer.save_weights(path)
-        self.classifier_layer.save_weights(path)
-
-    def load_classifier(self, path):
-        """Load the classifier.
-
-        :param path: path string, with format ".h5".
-        """
-        self.classifier.load_weights(path)
-
-    @property
-    def features(self):
-        """Get the extracted features"""
-        if not isinstance(self.extracted_features, np.ndarray):
-            raise AttributeError("Extracted features not exist, please call .extract() first")
-
-        return self.extracted_features
-
-
-class NASNetLargeExtractor(FeatureExtractor):
-    """Build the extractor with pre-trained NASNetLarge model"""
-
-    def __init__(self, image_size, classes):
-        """ init a new NASNetLarge extractor instance.
-
-        :param image_size: the size of the input image, which should be a square matrix.
-        :param classes: the number of classes of the images.
-        """
-        super().__init__(image_size, classes,
-                         hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
-                         input_size=331)
 
     def extract_fine_tuned_features(self, x, y, epochs=25, batch_size=128, validation_data=None):
         """fine-tune the model and extract compressed features.
