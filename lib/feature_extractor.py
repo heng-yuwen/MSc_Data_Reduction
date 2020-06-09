@@ -62,7 +62,7 @@ class FeatureExtractor(object):
                                   kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
                                   ))
 
-        self.classifier.compile(optimizer='sgd',
+        self.classifier.compile(optimizer=tf.keras.optimizers.Adam(),
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
 
@@ -94,17 +94,8 @@ class FeatureExtractor(object):
         if not compression:
             self.extracted_features = self.model_full.predict(x, batch_size=batch_size, verbose=1)
         if compression:
-            self.extracted_features = self.compression_model.predict(x, batch_size=batch_size)
+            self.extracted_features = self.compression_model.predict(x, batch_size=batch_size, verbose=1)
         return self.extracted_features
-
-    def _extract(self, x, batch_size):
-        """Extract features from extractor without compression.
-
-        :param x: any images.
-        :param batch_size: the size of the mini-batch.
-        :return: extracted features.
-        """
-        return self.model_full.predict(x, batch_size=batch_size, verbose=1)
 
     def save_features(self, path):
         """Save the extracted features to the given path.
@@ -135,8 +126,9 @@ class FeatureExtractor(object):
             raise AttributeError("Extracted features not exist, please call .extract() first")
         # extract features for validation data.
         if validation_data:
+            print("Extracting features for validation data")
             (x_valid, y_valid) = validation_data
-            x_valid = self._extract(x_valid, batch_size)
+            x_valid = self.extract(x_valid, batch_size)
             validation_data = (x_valid, y_valid)
 
         # train the classifier
