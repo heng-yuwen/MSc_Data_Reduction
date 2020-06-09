@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as hub
-from tensorflow.keras.layers import Lambda, Dense, BatchNormalization
+from tensorflow.keras.layers import Lambda, Dense, BatchNormalization, Input
 
 from .callbacks import MonitorAndSaveParameters
 
@@ -36,6 +36,7 @@ class FeatureExtractor(object):
 
         # build the whole model.
         self.model = tf.keras.Sequential([
+            Input(shape=(image_size, image_size, 3)),
             Lambda(lambda image: tf.image.resize(image, [input_size, input_size])),
             hub.KerasLayer(hub_url,
                            trainable=trainable, name="extractor"),
@@ -46,7 +47,7 @@ class FeatureExtractor(object):
                   kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
                   )
         ])
-        self.model.build([None, image_size, image_size, 3])
+        # self.model.build([None, image_size, image_size, 3])
 
         # build the extractor
         self.extractor = tf.keras.Sequential([
