@@ -8,7 +8,7 @@ described in the paper "Do Better ImageNet Models Transfer Better?"
 import numpy as np
 
 
-class GridSearch(object):
+class RandomSearch(object):
     """Hyper-parameter search methods"""
 
     def __init__(self, model):
