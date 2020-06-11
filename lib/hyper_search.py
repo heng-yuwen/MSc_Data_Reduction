@@ -22,7 +22,7 @@ class RandomSearch(object):
         self.model = model
         # self.weights = None
 
-    def __call__(self, x, y, validation_data):
+    def __call__(self, x, y, validation_data, batch_size):
         """Do the grid search evaluation
 
         :param x: the training set images.
@@ -39,7 +39,7 @@ class RandomSearch(object):
             for wd in self.weight_decay:
                 print("Evaluating hyper parameters: learning_rate = {}, weight_decay = {}".format(lr, wd))
                 history = self.model.fine_tune_features(x, y, learning_rate=lr, weight_decay=wd, epochs=10,
-                                                        batch_size=128, validation_data=validation_data)
+                                                        batch_size=batch_size, validation_data=validation_data)
 
                 # record history
                 history_dict[len(history_dict)] = {"learning_rate": lr, "weight_decay": wd, "history": history}
