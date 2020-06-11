@@ -1,4 +1,5 @@
 # check gpu devices
+import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
@@ -23,11 +24,15 @@ print("Pre-trained NASNetLarge is loaded.")
 # preprocess the dataset
 (x_train, y_train), (x_test, y_test) = load_mnist()
 
+x_train = x_train[..., None]
+x_test = x_test[..., None]
+
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
 
 def preprocess_data(data_set):
+    data_set = np.repeat(data_set, 3, axis=3)
     data_set /= 255.0
     return data_set
 
