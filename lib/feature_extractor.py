@@ -71,7 +71,7 @@ class FeatureExtractor(object):
             self.extracted_features = features
         if compression:
             print("Compressing features...")
-            features = self.compressor.predict(x, batch_size=batch_size, verbose=1)
+            features = self.compressor_layer.predict(x, batch_size=batch_size, verbose=1)
             self.extracted_compressed_features = features
 
         return features

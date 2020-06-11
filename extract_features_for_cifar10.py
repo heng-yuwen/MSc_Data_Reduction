@@ -64,7 +64,8 @@ print("There are {} test samples.".format(x_test.shape[0]))
 
 model.load_classifier()
 model.load_extractor()
-model.extract(x_train, batch_size=batch_size, compression=True)
+model.load_features()
+model.extract(model.features, batch_size=batch_size, compression=True)
 
 model.save_features()
 

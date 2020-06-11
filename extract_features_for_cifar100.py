@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 
 # load cifar10 datasets
-from lib.data_loader import load_cifar10
+from lib.data_loader import load_cifar100
 from lib.feature_extractor import NASNetLargeExtractor
 
 devices = tf.config.list_physical_devices('GPU')
@@ -21,7 +21,7 @@ model = NASNetLargeExtractor(32, 100, model_path="models/cifar100", data_path="d
 print("Pre-trained NASNetLarge is loaded.")
 
 # preprocess the dataset
-(x_train, y_train), (x_test, y_test) = load_cifar10()
+(x_train, y_train), (x_test, y_test) = load_cifar100()
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
@@ -59,12 +59,12 @@ history = model.train_classifier(y_train, epochs=50, batch_size=batch_size, vali
 model.save_history(history, name="train_classifier_his")
 
 # save trained model
-# model.save_classifier()
-# model.save_extractor()
+model.save_classifier()
+model.save_extractor()
 
-model.load_classifier()
-model.load_extractor()
-model.extract(x_train, batch_size=batch_size, compression=True)
+# model.load_classifier()
+# model.load_extractor()
+model.extract(model.features, batch_size=batch_size, compression=True)
 
 model.save_features()
 

@@ -84,7 +84,7 @@ def load_cifar10():
 # limitations under the License.
 # ==============================================================================
 
-def load_data(label_mode='fine'):
+def load_cifar100(label_mode='fine'):
     """Loads [CIFAR100 dataset](https://www.cs.toronto.edu/~kriz/cifar.html).
     This is a dataset of 50,000 32x32 color training images and
     10,000 test images, labeled over 100 fine-grained classes that are
@@ -126,3 +126,35 @@ def load_data(label_mode='fine'):
         x_test = x_test.transpose(0, 2, 3, 1)
 
     return (x_train, y_train), (x_test, y_test)
+
+
+def load_mnist():
+    """Loads the [MNIST dataset](http://yann.lecun.com/exdb/mnist/).
+    This is a dataset of 60,000 28x28 grayscale images of the 10 digits,
+    along with a test set of 10,000 images.
+    More info can be found at the
+    (MNIST homepage)[http://yann.lecun.com/exdb/mnist/].
+    Arguments:
+        path: path where to cache the dataset locally
+            (relative to ~/.keras/datasets).
+    Returns:
+        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+        **x_train, x_test**: uint8 arrays of grayscale image data with shapes
+          (num_samples, 28, 28).
+        **y_train, y_test**: uint8 arrays of digit labels (integers in range 0-9)
+          with shapes (num_samples,).
+    License:
+        Yann LeCun and Corinna Cortes hold the copyright of MNIST dataset,
+        which is a derivative work from original NIST datasets.
+        MNIST dataset is made available under the terms of the
+        [Creative Commons Attribution-Share Alike 3.0 license.](
+        https://creativecommons.org/licenses/by-sa/3.0/)
+    """
+    origin_folder = 'https://storage.googleapis.com/tensorflow/tf-keras-datasets/'
+    path = os.path.join(os.getcwd(), "datasets", "mnist", 'mnist.npz')
+
+    with np.load(path, allow_pickle=True) as f:
+        x_train, y_train = f['x_train'], f['y_train']
+        x_test, y_test = f['x_test'], f['y_test']
+
+        return (x_train, y_train), (x_test, y_test)
