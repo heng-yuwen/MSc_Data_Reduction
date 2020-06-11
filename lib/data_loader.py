@@ -150,7 +150,7 @@ def load_mnist():
         [Creative Commons Attribution-Share Alike 3.0 license.](
         https://creativecommons.org/licenses/by-sa/3.0/)
     """
-    origin_folder = 'https://storage.googleapis.com/tensorflow/tf-keras-datasets/'
+    # origin_folder = 'https://storage.googleapis.com/tensorflow/tf-keras-datasets/'
     path = os.path.join(os.getcwd(), "datasets", "mnist", 'mnist.npz')
 
     with np.load(path, allow_pickle=True) as f:
