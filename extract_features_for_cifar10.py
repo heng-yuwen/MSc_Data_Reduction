@@ -15,6 +15,8 @@ else:
     print(devices)
     print()
 
+batch_size = 128
+
 # download google nasnet large pre-trained model
 model = NASNetLargeExtractor(32, 10, model_path="models/cifar10", data_path="datasets/cifar10")
 print("Pre-trained NASNetLarge is loaded.")
@@ -44,14 +46,14 @@ print("There are {} training samples and {} validation samples".format(x_train.s
 print("There are {} test samples.".format(x_test.shape[0]))
 
 # extract features
-features_train = model.extract(x_train, batch_size=256)
+features_train = model.extract(x_train, batch_size=batch_size)
 print("The shape of the extracted training sample features is: ", features_train.shape)
 
 # save features
 model.save_features()
 
 # use dense layer to test feature quality
-history = model.train_classifier(y_train, epochs=50, batch_size=256, validation_data=(x_valid, y_valid))
+history = model.train_classifier(y_train, epochs=50, batch_size=batch_size, validation_data=(x_valid, y_valid))
 model.save_history(history, name="train_classifier_his")
 
 # save trained model
@@ -60,14 +62,14 @@ model.save_extractor()
 
 # Random Search for best fine tine hyper parameters
 rds = RandomSearch(model)
-best_dict, history_dict = rds(x_train, y_train, validation_data=(x_valid, y_valid), batch_size=256)
+best_dict, history_dict = rds(x_train, y_train, validation_data=(x_valid, y_valid), batch_size=batch_size)
 
 model.save_history(history_dict, name="random_search_his")
 
 # fine-tune the network
 print("Start to fine tune the network and extract compressed features.")
 history = model.fine_tune_features(x_train, y_train, learning_rate=best_dict["learning_rate"],
-                                   weight_decay=best_dict["weight_decay"], batch_size=256, epochs=128,
+                                   weight_decay=best_dict["weight_decay"], batch_size=batch_size, epochs=128,
                                    validation_data=(x_valid, y_valid), early_stop=True)
 features = model.extract(x_train, compression=True)
 
