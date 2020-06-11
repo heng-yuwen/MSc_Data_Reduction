@@ -17,7 +17,7 @@ else:
 batch_size = 128
 
 # download google nasnet large pre-trained model
-model = NASNetLargeExtractor(32, 10, model_path="models/cifar10", data_path="datasets/cifar10")
+model = NASNetLargeExtractor(32, 100, model_path="models/cifar100", data_path="datasets/cifar100")
 print("Pre-trained NASNetLarge is loaded.")
 
 # preprocess the dataset
@@ -35,8 +35,8 @@ def preprocess_data(data_set):
 x_train = preprocess_data(x_train)
 x_test = preprocess_data(x_test)
 
-y_train = to_categorical(y_train, num_classes=10)
-y_test = to_categorical(y_test, num_classes=10)
+y_train = to_categorical(y_train, num_classes=100)
+y_test = to_categorical(y_test, num_classes=100)
 
 # split a validation set
 x_train, x_valid, y_train, y_valid = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
@@ -45,18 +45,18 @@ print("There are {} training samples and {} validation samples".format(x_train.s
 print("There are {} test samples.".format(x_test.shape[0]))
 
 # extract features
-# features_train = model.extract(x_train, batch_size=batch_size)
-# print("The shape of the extracted training sample features is: ", features_train.shape)
+features_train = model.extract(x_train, batch_size=batch_size)
+print("The shape of the extracted training sample features is: ", features_train.shape)
 
 # save features
-# model.save_features()
+model.save_features()
 
 # load features
 # model.load_features()
 
 # use dense layer to test feature quality
-# history = model.train_classifier(y_train, epochs=50, batch_size=batch_size, validation_data=(x_valid, y_valid))
-# model.save_history(history, name="train_classifier_his")
+history = model.train_classifier(y_train, epochs=50, batch_size=batch_size, validation_data=(x_valid, y_valid))
+model.save_history(history, name="train_classifier_his")
 
 # save trained model
 # model.save_classifier()
