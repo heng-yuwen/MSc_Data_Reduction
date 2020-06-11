@@ -215,7 +215,8 @@ class NASNetLargeExtractor(FeatureExtractor):
         :param classes: the number of classes of the images.
         """
         super().__init__(image_size,
-                         hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
+                         # hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
+                         hub_url=os.path.join(os.getcwd(), "lib", "cache_model", "nasnet"),
                          input_size=331, model_path=model_path, data_path=data_path)
 
         # build the compression layer to encode the features a step further.

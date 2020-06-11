@@ -1,10 +1,10 @@
 # check gpu devices
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-# load cifar10 datasets
-from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 
+# load cifar10 datasets
+from lib.data_loader import load_cifar10
 from lib.feature_extractor import NASNetLargeExtractor
 from lib.hyper_search import RandomSearch
 
@@ -20,7 +20,7 @@ model = NASNetLargeExtractor(32, 10, model_path="models/cifar10", data_path="dat
 print("Pre-trained NASNetLarge is loaded.")
 
 # preprocess the dataset
-(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+(x_train, y_train), (x_test, y_test) = load_cifar10()
 
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
