@@ -17,7 +17,7 @@ else:
 batch_size = 128
 
 # download google nasnet large pre-trained model
-model = NASNetLargeExtractor(32, 10, model_path="models/mnist", data_path="datasets/mnist")
+model = NASNetLargeExtractor(28, 10, model_path="models/mnist", data_path="datasets/mnist")
 print("Pre-trained NASNetLarge is loaded.")
 
 # preprocess the dataset
