@@ -36,4 +36,4 @@ export DATASET_DIR=${TMP}/datasets/
 
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
 cd ..
-python feature_extraction_for_mnist.py
+python extract_features_for_mnist.py
