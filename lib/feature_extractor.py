@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as hub
+from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Lambda, Dense, BatchNormalization
 
 from .callbacks import MonitorAndSaveParameters
@@ -122,9 +123,10 @@ class FeatureExtractor(object):
                                                              index_col=False).values
             print("Compressed training set features loaded")
 
-    def train_classifier(self, y, epochs=25, batch_size=128, validation_data=None, early_stop=True):
+    def train_classifier(self, y, epochs=25, batch_size=128, learning_rate=0.01, validation_data=None, early_stop=True):
         """Train the classifier with the extracted features and report performance.
 
+        :param early_stop: weather return the best model evaluated with validation or not
         :param y: training set labels.
         :param epochs: the number of epochs to train the classifier.
         :param batch_size: the size of the mini-batch.
@@ -139,6 +141,10 @@ class FeatureExtractor(object):
                 print("Extracting features for validation data")
                 self.extracted_valid_features = self._extract(x_valid, batch_size)
             validation_data = (self.extracted_valid_features, y_valid)
+
+        # update learning rate
+        K.set_value(self.classifier.optimizer.learning_rate, learning_rate)
+        print("The learning rate of the classifier is: {}".format(self.classifier.optimizer.learning_rate.numpy()))
 
         # train the classifier
         history = self.train(self.classifier, self.extracted_features, y, epochs=epochs, batch_size=batch_size,
@@ -247,7 +253,7 @@ class NASNetLargeExtractor(FeatureExtractor):
             self.compressor_layer,
             self.classifier_layer
         ])
-        self.classifier.compile(optimizer=tf.keras.optimizers.SGD(0.001),
+        self.classifier.compile(optimizer=tf.keras.optimizers.SGD(0.01),
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
 

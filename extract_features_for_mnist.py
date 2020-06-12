@@ -62,7 +62,8 @@ model.load_extractor()
 model.load_classifier()
 
 # use dense layer to test feature quality
-history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid))
+history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, learning_rate=0.001,
+                                 validation_data=(x_valid, y_valid))
 model.save_history(history, name="train_classifier_2")
 
 # save trained model
