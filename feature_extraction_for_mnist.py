@@ -50,20 +50,20 @@ print("There are {} training samples and {} validation samples".format(x_train.s
 print("There are {} test samples.".format(x_test.shape[0]))
 
 # extract features
-features_train = model.extract(x_train, batch_size=batch_size)
-print("The shape of the extracted training sample features is: ", features_train.shape)
+# features_train = model.extract(x_train, batch_size=batch_size)
+# print("The shape of the extracted training sample features is: ", features_train.shape)
 
 # save features
 # model.save_features()
 
 # load features
-# model.load_features()
-# model.load_extractor()
-# model.load_classifier()
+model.load_features()
+model.load_extractor()
+model.load_classifier()
 
 # use dense layer to test feature quality
 history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid))
-model.save_history(history, name="train_classifier")
+model.save_history(history, name="train_classifier_2")
 
 # save trained model
 model.save_classifier()

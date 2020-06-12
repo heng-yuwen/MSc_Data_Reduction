@@ -247,7 +247,7 @@ class NASNetLargeExtractor(FeatureExtractor):
             self.compressor_layer,
             self.classifier_layer
         ])
-        self.classifier.compile(optimizer=tf.keras.optimizers.SGD(0.01),
+        self.classifier.compile(optimizer=tf.keras.optimizers.SGD(0.001),
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
 
