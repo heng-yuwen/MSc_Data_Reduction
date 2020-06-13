@@ -55,7 +55,7 @@ class FeatureExtractor(object):
         self.extracted_valid_features = None
         self.extracted_compressed_features = None
 
-    def extract(self, x, batch_size=128, compression=False):
+    def extract(self, x, y, batch_size=128, compression=False):
         """Extract the features from training images.
 
         :param x: training images.
@@ -73,6 +73,7 @@ class FeatureExtractor(object):
         if compression:
             print("Compressing features...")
             features = self.compressor_layer.predict(x, batch_size=batch_size, verbose=1)
+            features = np.append(features, y, axis=1)
             self.extracted_compressed_features = features
 
         return features
