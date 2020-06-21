@@ -21,7 +21,6 @@ from __future__ import print_function
 import os
 
 import numpy as np
-import tensorflow as tf
 from PIL import Image
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.datasets.cifar import load_batch
@@ -162,28 +161,28 @@ def load_mnist():
         return (x_train, y_train), (x_test, y_test)
 
 
-def normalize_img(img):
+def normalize_img(image):
     """Normalizes images: `uint8` -> `float32`."""
-    image = tf.cast(img, tf.float32)
-    height = image.shape[0]
-    width = image.shape[1]
+    # image = img.astype("float32")
+    height = image.size[0]
+    width = image.size[1]
 
     if height == width:
-        image = tf.image.resize(image, [331, 331])
+        image = image.resize((331, 331))
 
     elif height > width:
         ratio = 331. / width
         new_height = int(height * ratio)
-        image = tf.image.resize(image, [new_height, 331])
-        image = tf.image.crop_to_bounding_box(image, (new_height - 331) // 2, 0, 331, 331)
+        image = image.resize((new_height, 331))
+        image = image.crop(((new_height - 331) // 2, 0, (new_height - 331) // 2 + 331, 331))
 
     else:
         ratio = 331. / height
         new_width = int(width * ratio)
-        image = tf.image.resize(image, [331, new_width])
-        image = tf.image.crop_to_bounding_box(image, 0, (new_width - 331) // 2, 331, 331)
+        image = image.resize((331, new_width))
+        image = image.crop((0, (new_width - 331) // 2, 331, (new_width - 331) // 2 + 331))
 
-    image = image / 255.
+    image = np.asarray(image).astype("float32") / 255.
     return image
 
 
@@ -205,11 +204,11 @@ def load_dtd():
     y_valid = [label.split("/")[0] for label in x_valid_path]
     y_test = [label.split("/")[0] for label in x_test_path]
 
-    x_train = [normalize_img(np.asarray(Image.open(os.path.join(path, "images", img_path.strip())))) for img_path in
+    x_train = [normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
                x_train_path]
-    x_valid = [normalize_img(np.asarray(Image.open(os.path.join(path, "images", img_path.strip())))) for img_path in
+    x_valid = [normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
                x_valid_path]
-    x_test = [normalize_img(np.asarray(Image.open(os.path.join(path, "images", img_path.strip())))) for img_path in
+    x_test = [normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
               x_test_path]
 
     return x_train, y_train, x_valid, y_valid, x_test, y_test
