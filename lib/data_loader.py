@@ -21,6 +21,8 @@ from __future__ import print_function
 import os
 
 import numpy as np
+import tensorflow as tf
+from PIL import Image
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.datasets.cifar import load_batch
 
@@ -158,3 +160,56 @@ def load_mnist():
         x_test, y_test = f['x_test'], f['y_test']
 
         return (x_train, y_train), (x_test, y_test)
+
+
+def normalize_img(img):
+    """Normalizes images: `uint8` -> `float32`."""
+    image = tf.cast(img, tf.float32)
+    height = image.shape[0]
+    width = image.shape[1]
+
+    if height == width:
+        image = tf.image.resize(image, [331, 331])
+
+    elif height > width:
+        ratio = 331. / width
+        new_height = int(height * ratio)
+        image = tf.image.resize(image, [new_height, 331])
+        image = tf.image.crop_to_bounding_box(image, (new_height - 331) // 2, 0, 331, 331)
+
+    else:
+        ratio = 331. / height
+        new_width = int(width * ratio)
+        image = tf.image.resize(image, [331, new_width])
+        image = tf.image.crop_to_bounding_box(image, 0, (new_width - 331) // 2, 331, 331)
+
+    image = image / 255.
+    return image
+
+
+def load_dtd():
+    path = os.path.join(os.getcwd(), "datasets", "dtd")
+    x = []
+
+    # load train data list
+    for set_name in ["train1", "val1", "test1"]:
+        x_sub = [l for l in open(os.path.join(path, "labels", set_name + ".txt")).readlines()]
+        x.extend(x_sub)
+
+    x = np.array(x)
+    rng = np.random.default_rng(42)
+    rng.shuffle(x)
+    x_train_path, x_valid_path, x_test_path = np.split(x, [int(.6 * len(x)), int(.8 * len(x))])
+
+    y_train = [label.split("/")[0] for label in x_train_path]
+    y_valid = [label.split("/")[0] for label in x_valid_path]
+    y_test = [label.split("/")[0] for label in x_test_path]
+
+    x_train = [normalize_img(np.asarray(Image.open(os.path.join(path, "images", img_path.strip())))) for img_path in
+               x_train_path]
+    x_valid = [normalize_img(np.asarray(Image.open(os.path.join(path, "images", img_path.strip())))) for img_path in
+               x_valid_path]
+    x_test = [normalize_img(np.asarray(Image.open(os.path.join(path, "images", img_path.strip())))) for img_path in
+              x_test_path]
+
+    return x_train, y_train, x_valid, y_valid, x_test, y_test

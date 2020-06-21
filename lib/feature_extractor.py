@@ -21,15 +21,14 @@ from .callbacks import MonitorAndSaveParameters
 class FeatureExtractor(object):
     """Generic feature extractor."""
 
-    def __init__(self, image_size, model_path, data_path, hub_url=None, extractor_path=None, trainable=False,
-                 input_size=224):
+    def __init__(self, image_size, model_path, data_path, hub_url=None, trainable=False,
+                 input_size=224, require_resize=True):
         """Create a  new  feature extractor instance.
 
         :param data_path: the the directory of extracted features.
         :param model_path: the directory of trained model parameters.
         :param image_size: the size of the input image, which should be a square matrix.
         :param hub_url: the url of the pre-trained extractor from TF Hub.
-        :param extractor_path: the path of the saved extractor weights.
         :param trainable: whether to freeze the extractor weights or not.
         :param input_size: the input layer shape of the extractor.
         """
@@ -38,12 +37,19 @@ class FeatureExtractor(object):
         self.data_path = data_path
 
         # build the extractor.
-        self.extractor = tf.keras.Sequential([
-            Lambda(lambda image: tf.image.resize(image, [input_size, input_size])),
-            hub.KerasLayer(hub_url,
-                           trainable=trainable)
-        ])
-        self.extractor.build([None, image_size, image_size, 3])
+        if require_resize:
+            self.extractor = tf.keras.Sequential([
+                Lambda(lambda image: tf.image.resize(image, [input_size, input_size])),
+                hub.KerasLayer(hub_url,
+                               trainable=trainable)
+            ])
+            self.extractor.build([None, image_size, image_size, 3])
+        else:
+            self.extractor = tf.keras.Sequential([
+                hub.KerasLayer(hub_url,
+                               trainable=trainable)
+            ])
+            self.extractor.build([None, input_size, input_size, 3])
 
         self.compressor_layer = None
         self.classifier_layer = None
@@ -55,9 +61,10 @@ class FeatureExtractor(object):
         self.extracted_valid_features = None
         self.extracted_compressed_features = None
 
-    def extract(self, x, y, batch_size=128, compression=False):
+    def extract(self, x, y=None, batch_size=128, compression=False):
         """Extract the features from training images.
 
+        :param y: label of training data
         :param x: training images.
         :param batch_size: the size of the mini-batch.
         :param compression: compress the features or not, default False, please first train the compressor layer first.
@@ -215,7 +222,7 @@ class FeatureExtractor(object):
 class NASNetLargeExtractor(FeatureExtractor):
     """Build the extractor with pre-trained NASNetLarge model"""
 
-    def __init__(self, image_size, classes, model_path, data_path):
+    def __init__(self, image_size, classes, model_path, data_path, require_resize=True):
         """ init a new NASNetLarge extractor instance.
 
         :param image_size: the size of the input image, which should be a square matrix.
@@ -224,7 +231,7 @@ class NASNetLargeExtractor(FeatureExtractor):
         super().__init__(image_size,
                          # hub_url="https://tfhub.dev/google/imagenet/nasnet_large/feature_vector/4",
                          hub_url=os.path.join(os.getcwd(), "lib", "cache_model", "nasnet"),
-                         input_size=331, model_path=model_path, data_path=data_path)
+                         input_size=331, model_path=model_path, data_path=data_path, require_resize=require_resize)
 
         # build the compression layer to encode the features a step further.
         self.compressor_layer = tf.keras.Sequential([
