@@ -204,11 +204,11 @@ def load_dtd():
     y_valid = [label.split("/")[0] for label in x_valid_path]
     y_test = [label.split("/")[0] for label in x_test_path]
 
-    x_train = [normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
-               x_train_path]
-    x_valid = [normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
-               x_valid_path]
-    x_test = [normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
-              x_test_path]
+    x_train = np.array([normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
+                        x_train_path])
+    x_valid = np.array([normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
+                        x_valid_path])
+    x_test = np.array([normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
+                       x_test_path])
 
     return x_train, y_train, x_valid, y_valid, x_test, y_test
