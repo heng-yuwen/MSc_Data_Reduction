@@ -22,6 +22,7 @@ import os
 
 import numpy as np
 from PIL import Image
+from sklearn.preprocessing import LabelEncoder
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.datasets.cifar import load_batch
 
@@ -203,6 +204,13 @@ def load_dtd():
     y_train = [label.split("/")[0] for label in x_train_path]
     y_valid = [label.split("/")[0] for label in x_valid_path]
     y_test = [label.split("/")[0] for label in x_test_path]
+
+    le = LabelEncoder()
+    le.fit(y_train)
+    print("This dataset has {} classes".format(le.classes_))
+    y_train = le.transform(y_train)
+    y_valid = le.transform(y_valid)
+    y_test = le.transform(y_test)
 
     x_train = np.array([normalize_img(Image.open(os.path.join(path, "images", img_path.strip()))) for img_path in
                         x_train_path])
