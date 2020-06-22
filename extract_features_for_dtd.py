@@ -25,27 +25,31 @@ y_valid = to_categorical(y_valid, num_classes=47)
 model = NASNetLargeExtractor(331, 47, model_path="models/dtd", data_path="datasets/dtd", require_resize=False)
 print("Pre-trained NASNetLarge is loaded.")
 
-features_train = model.extract(x_train, batch_size=batch_size)
-print("The shape of the extracted training sample features is: ", features_train.shape)
-
-# save features
-model.save_features()
-
-# use dense layer to test feature quality
-history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid))
-model.save_history(history, name="train_classifier_his")
-
-history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid),
-                                 learning_rate=0.001)
-model.save_history(history, name="train_classifier_his_2")
-
-history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid),
-                                 learning_rate=0.0001)
-model.save_history(history, name="train_classifier_his_3")
-
-# save trained model
-model.save_classifier()
-model.save_extractor()
-
-# model.extract(model.features, y_train, batch_size=batch_size, compression=True)
+# features_train = model.extract(x_train, batch_size=batch_size)
+# print("The shape of the extracted training sample features is: ", features_train.shape)
+#
+# # save features
 # model.save_features()
+#
+# # use dense layer to test feature quality
+# history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid))
+# model.save_history(history, name="train_classifier_his")
+#
+# history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid),
+#                                  learning_rate=0.001)
+# model.save_history(history, name="train_classifier_his_2")
+#
+# history = model.train_classifier(y_train, epochs=100, batch_size=batch_size, validation_data=(x_valid, y_valid),
+#                                  learning_rate=0.0001)
+# model.save_history(history, name="train_classifier_his_3")
+#
+# # save trained model
+# model.save_classifier()
+# model.save_extractor()
+
+# save compressed features
+model.load_features()
+model.load_classifier()
+model.load_extractor()
+model.extract(model.features, y_train, batch_size=batch_size, compression=True)
+model.save_features()
