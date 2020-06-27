@@ -89,37 +89,42 @@ class EGDIS(object):
         return np.concatenate((selected, selected_boundary))
 
 
+def _group_consecutives(attribute_with_label, step=0):
+    """Return list of consecutive lists of numbers from vals (number list)."""
+    run = []
+    result = [run]
+    expect = None
+    for v in attribute_with_label:
+        if (v[1] == expect) or (expect is None):
+            run.append(v[0])
+        else:
+            run = [v[0]]
+            result.append(run)
+        expect = v[1] + step
+    return result
+
+
 class POP(object):
     """Implementation of the patterns by ordered projections(POP) algorithm. Cited: Riquelme J C, Aguilar-Ruiz J S,
     Toro M. Finding representative patterns with ordered projections[J]. Pattern Recognition, 2003, 36(4): 1009-1018.
     """
 
     def __init__(self):
+        """Init a new POP instance."""
         self.x = None
         self.y = None
 
-        return
+    def _cal_weakness(self, attribute):
+        """Calculate the weakness of the instances for one attribute.
+        :param attribute: an 1D array of a single attribute across all samples.
+        """
 
-    def _group_consecutives(self, attribute_with_label, step=0):
-        """Return list of consecutive lists of numbers from vals (number list)."""
-        run = []
-        result = [run]
-        expect = None
-        for v in attribute_with_label:
-            if (v[1] == expect) or (expect is None):
-                run.append(v[0])
-            else:
-                run = [v[0]]
-                result.append(run)
-            expect = v[1] + step
-        return result
-
-    def _cal_weakness(self, attribute, y):
         weakness = np.zeros(len(self.x))
-        assert len(attribute) == len(y), "The length doesn't match."
+        assert len(attribute) == len(self.y), "The length doesn't match."
+        # sort the samples according to the attribute value.
         sort_index = np.argsort(attribute)
-        attribute_with_label = np.concatenate((sort_index.reshape(-1, 1), y[sort_index].reshape(-1, 1)), axis=1)
-        grouped_index = self._group_consecutives(attribute_with_label)
+        attribute_with_label = np.concatenate((sort_index.reshape(-1, 1), self.y[sort_index].reshape(-1, 1)), axis=1)
+        grouped_index = _group_consecutives(attribute_with_label)
         for group in grouped_index:
             if len(group) >= 3:
                 weakness[group[1:-1]] += 1
@@ -127,9 +132,13 @@ class POP(object):
         return weakness
 
     def fit(self, x, y):
+        """Get the weakness score for each sample.
+        :param x: the training set.
+        :param y: the the label of the samples.
+        """
         self.x = x
         self.y = y
 
-        weakness_list = np.array([self._cal_weakness(attribute, self.y) for attribute in self.x.T]).sum(axis=0)
+        weakness_list = np.array([self._cal_weakness(attribute) for attribute in self.x.T]).sum(axis=0)
 
         return weakness_list
