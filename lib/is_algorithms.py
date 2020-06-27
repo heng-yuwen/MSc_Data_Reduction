@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Data Reduction Algorithms.
 
-This module provides implementations for data reduction algorithms.
+This module provides implementations for data reduction algorithms (for instance selection).
 """
 
 import numpy as np
@@ -91,17 +91,28 @@ class EGDIS(object):
 
 def _group_consecutives(attribute_with_label, step=0):
     """Return list of consecutive lists of numbers from vals (number list)."""
+
     run = []
     result = [run]
-    expect = None
+    expect_value = None
+    expect_label = None
     for v in attribute_with_label:
-        if (v[1] == expect) or (expect is None):
+        if (v[1] == expect_label) or (expect_label is None):
             run.append(v[0])
+            if v[0] == expect_value:
+                print("Find consecutive attributes, implement _resort is necessary.")
         else:
             run = [v[0]]
             result.append(run)
-        expect = v[1] + step
+        expect_label = v[1] + step
+        expect_value = v[0]
     return result
+
+
+def _resort(sort_index, attributes, labels):
+    """Resort the orders within consecutive repeating attribute values"""
+    raise NotImplementedError("This function is not implemented because no consecutive repeating attributes found for "
+                              "now.")
 
 
 class POP(object):
@@ -111,6 +122,7 @@ class POP(object):
 
     def __init__(self):
         """Init a new POP instance."""
+
         self.x = None
         self.y = None
 
@@ -123,6 +135,7 @@ class POP(object):
         assert len(attribute) == len(self.y), "The length doesn't match."
         # sort the samples according to the attribute value.
         sort_index = np.argsort(attribute)
+
         attribute_with_label = np.concatenate((sort_index.reshape(-1, 1), self.y[sort_index].reshape(-1, 1)), axis=1)
         grouped_index = _group_consecutives(attribute_with_label)
         for group in grouped_index:
@@ -136,6 +149,7 @@ class POP(object):
         :param x: the training set.
         :param y: the the label of the samples.
         """
+
         self.x = x
         self.y = y
 
