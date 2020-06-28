@@ -134,6 +134,7 @@ class FeatureExtractor(object):
     def train_classifier(self, y, epochs=25, batch_size=128, learning_rate=0.01, validation_data=None, early_stop=True):
         """Train the classifier with the extracted features and report performance.
 
+        :param learning_rate: the learning rate used by the SGD.
         :param early_stop: weather return the best model evaluated with validation or not
         :param y: training set labels.
         :param epochs: the number of epochs to train the classifier.
@@ -187,7 +188,7 @@ class FeatureExtractor(object):
     def load_classifier(self):
         """Load the classifier."""
 
-        self.compressor_layer.load_weights(os.path.join(self.model_path, "compressor.h5"))
+        # self.compressor_layer.load_weights(os.path.join(self.model_path, "compressor.h5"))
         self.classifier_layer.load_weights(os.path.join(self.model_path, "classifier.h5"))
         print("Classifier loaded")
 
@@ -201,6 +202,7 @@ class FeatureExtractor(object):
         print("History saved.")
 
     def train(self, model, x, y, epochs=25, batch_size=128, validation_data=None, early_stop=False):
+        """Train a model with given parameters."""
         history = {}
         default = model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data,
                             callbacks=[
@@ -209,6 +211,15 @@ class FeatureExtractor(object):
         history["acc"] = default.history["accuracy"]
         history["loss"] = default.history["loss"]
         return history
+
+    def get_cl_score(self, y, batch_size):
+        """Use pre-trained network as score function. Cited: Hacohen G, Weinshall D. On the power of curriculum
+        learning in training deep networks[J]. arXiv preprint arXiv:1904.03626, 2019. """
+        scores = self.classifier_layer.predict_proba(self.extracted_compressed_features[:, :128], batch_size=batch_size,
+                                                     verbose=1)
+        assert scores.shape == y.shape, "The shapes don't match"
+        scores = scores * y
+        return scores.sum(axis=1)
 
     @property
     def features(self):
