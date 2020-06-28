@@ -154,7 +154,7 @@ class POP(object):
         """
 
         self.x = x
-        self.y = y
+        self.y = np.argmax(y, axis=1)
 
         weakness_list = np.array([self._cal_weakness(attribute) for attribute in self.x.T]).sum(axis=0)
 
@@ -162,12 +162,13 @@ class POP(object):
 
 
 def rank_data_according_to_score(train_scores, reverse=False, random=False):
-    res = np.asarray(sorted(range(len(train_scores)), key=lambda k: train_scores[k], reverse=True))
-    if reverse:
-        res = np.flip(res, 0)
-    if random:
-        np.random.shuffle(res)
-    return res
+    """Rank the scores in descending order."""
+    rank = np.asarray(sorted(range(len(train_scores)), key=lambda k: train_scores[k], reverse=True))
+    # if reverse:
+    #     res = np.flip(res, 0)
+    # if random:
+    #     np.random.shuffle(res)
+    return rank
 
 
 class CL(object):
@@ -175,6 +176,11 @@ class CL(object):
         learning in training deep networks[J]. arXiv preprint arXiv:1904.03626, 2019."""
 
     def __init__(self, classes, dataset):
+        """Init a CL instance
+        :param classes: the number of classes.
+        :param dataset: the name string of the dataset.
+        """
+
         self.classifier_layer = tf.keras.Sequential([
             tf.keras.layers.Dense(classes,  # output dim is one score per each class
                                   activation='softmax',
@@ -185,10 +191,57 @@ class CL(object):
         self.classifier_layer.load_weights(os.path.join(os.getcwd(), "models", dataset, "classifier.h5"))
 
     def fit(self, x, y):
+        """Evaluate all the training samples and rank them based on scores.
+        :param x: the training set.
+        :param y: the the label of the samples.
+        """
+
         scores = self.classifier_layer.predict_proba(x)
         assert scores.shape == y.shape, "The shapes don't match"
         scores = scores * y
         scores = scores.sum(axis=1)
         rank = rank_data_according_to_score(scores)
 
-        return rank, scores[rank]
+        return rank, scores
+
+
+class WCL(object):
+    """Weighted Curriculum Learning. Use the weakness calculated by POP to weight the CL score, original work. Combine
+    difficulty with weakness. If weakness is 0, and the score is small, then the score is enlarged. If weakness is large
+    , then the score is scaled to a smaller value."""
+
+    def __init__(self, classes, dataset):
+        """Init a wcl instance.
+        :param classes: the number of classes.
+        :param dataset: the name string of the dataset.
+        """
+
+        self.cl = CL(classes, dataset)
+        self.pop = POP()
+
+    def fit(self, x, y, mode=1):
+        """Weight the CL scores with weakness.
+        :param mode: which weight mode to use.
+        :param x: the training set.
+        :param y: the the label of the samples.
+        """
+
+        weakness = self.pop.fit(x, y)
+        _, scores = self.cl.fit(x, y)
+        # attempt 1: scale down the non-boundary samples with 1/e^(weakness/128).
+        if mode == 1:
+            weighted_scores = scores * 1 / np.exp(weakness / 128)
+
+        # attempt 2: scale up the boundary samples, keep all boundary samples.
+        if mode == 2:
+            weighted_scores = scores.copy()
+            weighted_scores[weakness == 0] = 1
+
+        # attempt 3: hybrid method.
+        if mode == 3:
+            weighted_scores = scores * 1 / np.exp(weakness / 128)
+            weighted_scores[weakness == 0] = 1
+
+        rank = rank_data_according_to_score(weighted_scores)
+
+        return rank, weighted_scores
