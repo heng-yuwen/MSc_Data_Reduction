@@ -212,15 +212,6 @@ class FeatureExtractor(object):
         history["loss"] = default.history["loss"]
         return history
 
-    def get_cl_score(self, y, batch_size):
-        """Use pre-trained network as score function. Cited: Hacohen G, Weinshall D. On the power of curriculum
-        learning in training deep networks[J]. arXiv preprint arXiv:1904.03626, 2019. """
-        scores = self.classifier_layer.predict_proba(self.extracted_compressed_features[:, :128], batch_size=batch_size,
-                                                     verbose=1)
-        assert scores.shape == y.shape, "The shapes don't match"
-        scores = scores * y
-        return scores.sum(axis=1)
-
     @property
     def features(self):
         """Get the extracted features"""

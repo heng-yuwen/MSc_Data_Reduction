@@ -4,7 +4,10 @@
 This module provides implementations for data reduction algorithms (for instance selection).
 """
 
+import os
+
 import numpy as np
+import tensorflow as tf
 from sklearn.neighbors import NearestNeighbors
 
 
@@ -156,3 +159,36 @@ class POP(object):
         weakness_list = np.array([self._cal_weakness(attribute) for attribute in self.x.T]).sum(axis=0)
 
         return weakness_list
+
+
+def rank_data_according_to_score(train_scores, reverse=False, random=False):
+    res = np.asarray(sorted(range(len(train_scores)), key=lambda k: train_scores[k], reverse=True))
+    if reverse:
+        res = np.flip(res, 0)
+    if random:
+        np.random.shuffle(res)
+    return res
+
+
+class CL(object):
+    """Implementation of the Curriculum Learning. Cited: Hacohen G, Weinshall D. On the power of curriculum
+        learning in training deep networks[J]. arXiv preprint arXiv:1904.03626, 2019."""
+
+    def __init__(self, classes, dataset):
+        self.classifier_layer = tf.keras.Sequential([
+            tf.keras.layers.Dense(classes,  # output dim is one score per each class
+                                  activation='softmax',
+                                  kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
+                                  )
+        ])
+        self.classifier_layer.build([None, 128])
+        self.classifier_layer.load_weights(os.path.join(os.getcwd(), "models", dataset, "classifier.h5"))
+
+    def fit(self, x, y):
+        scores = self.classifier_layer.predict_proba(x)
+        assert scores.shape == y.shape, "The shapes don't match"
+        scores = scores * y
+        scores = scores.sum(axis=1)
+        rank = rank_data_according_to_score(scores)
+
+        return rank, scores[rank]
