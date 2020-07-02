@@ -154,7 +154,10 @@ class POP(object):
         """
 
         self.x = x
-        self.y = np.argmax(y, axis=1)
+        if len(y.shape) > 1:
+            self.y = np.argmax(y, axis=1)
+        else:
+            self.y = y
 
         weakness_list = np.array([self._cal_weakness(attribute) for attribute in self.x.T]).sum(axis=0)
 
@@ -175,8 +178,12 @@ class CL(object):
     """Implementation of the Curriculum Learning. Cited: Hacohen G, Weinshall D. On the power of curriculum
         learning in training deep networks[J]. arXiv preprint arXiv:1904.03626, 2019."""
 
-    def __init__(self, classes, dataset):
-        """Init a CL instance
+    def __init__(self):
+        """Init a CL instance"""
+        self.classifier_layer = None
+
+    def fit_dataset(self, classes, dataset):
+        """Fit the dataset information.
         :param classes: the number of classes.
         :param dataset: the name string of the dataset.
         """
@@ -210,13 +217,19 @@ class WCL(object):
     difficulty with weakness. If weakness is 0, and the score is small, then the score is enlarged. If weakness is large
     , then the score is scaled to a smaller value."""
 
-    def __init__(self, classes, dataset):
-        """Init a wcl instance.
+    def __init__(self):
+        """Init a wcl instance."""
+
+        self.cl = CL()
+        self.pop = None
+
+    def fit_dataset(self, classes, dataset):
+        """Fit the dataset information.
         :param classes: the number of classes.
         :param dataset: the name string of the dataset.
         """
 
-        self.cl = CL(classes, dataset)
+        self.cl.fit_dataset(classes, dataset)
         self.pop = POP()
 
     def fit(self, x, y, mode=1):
