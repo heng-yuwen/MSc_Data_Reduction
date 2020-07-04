@@ -84,6 +84,7 @@ class MonitorAndSaveParameters(tf.keras.callbacks.Callback):
             self.model.set_weights(self.best_weights)
             print("Restoring best model weights with validation accuracy: {}".format(self.max_acc))
 
+    # called at the end of the test/validate process
     def on_test_end(self, logs=None):
         if len(self.valid_loss) > 0:
             if len(self.valid_loss) > 1:

@@ -182,20 +182,23 @@ class CL(object):
         """Init a CL instance"""
         self.classifier_layer = None
 
-    def fit_dataset(self, classes, dataset):
+    def fit_dataset(self, classes=None, dataset=None, clf=None):
         """Fit the dataset information.
+        :param clf: trained keras classifier.
         :param classes: the number of classes.
         :param dataset: the name string of the dataset.
         """
-
-        self.classifier_layer = tf.keras.Sequential([
-            tf.keras.layers.Dense(classes,  # output dim is one score per each class
-                                  activation='softmax',
-                                  kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
-                                  )
-        ])
-        self.classifier_layer.build([None, 128])
-        self.classifier_layer.load_weights(os.path.join(os.getcwd(), "models", dataset, "classifier.h5"))
+        if clf:
+            self.classifier_layer = clf
+        else:
+            self.classifier_layer = tf.keras.Sequential([
+                tf.keras.layers.Dense(classes,  # output dim is one score per each class
+                                      activation='softmax',
+                                      kernel_regularizer=tf.keras.regularizers.L1L2(l1=0.0, l2=0.1),
+                                      )
+            ])
+            self.classifier_layer.build([None, 128])
+            self.classifier_layer.load_weights(os.path.join(os.getcwd(), "models", dataset, "classifier.h5"))
 
     def fit(self, x, y):
         """Evaluate all the training samples and rank them based on scores.
@@ -204,7 +207,7 @@ class CL(object):
         """
 
         scores = self.classifier_layer.predict_proba(x)
-        assert scores.shape == y.shape, "The shapes don't match"
+        assert scores.shape == y.shape, "The shapes don't match, {} with {}".format(scores.shape, y.shape)
         scores = scores * y
         scores = scores.sum(axis=1)
         rank = rank_data_according_to_score(scores)
