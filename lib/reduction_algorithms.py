@@ -9,6 +9,7 @@ import os
 import numpy as np
 import tensorflow as tf
 from sklearn.neighbors import NearestNeighbors
+from tensorflow.keras.utils import to_categorical
 
 
 class EGDIS(object):
@@ -61,20 +62,29 @@ class EGDIS(object):
                 return False
         return True
 
+    def select_boundary(self, x, y):
+
+        self.x = x
+        self.y = y
+        self.neigh.fit(x)
+        self.neigh_dist, self.neigh_ind = self.neigh.kneighbors(self.x)
+        irrelevance_scores = np.array([self._irrelevance(x_kneighbors) for x_kneighbors in self.neigh_ind])
+        selected_boundary = self.neigh_ind[irrelevance_scores >= int(self.k / 2)]
+        selected_boundary = selected_boundary[:, 0]
+
+        return selected_boundary, irrelevance_scores
+
     def fit(self, x, y):
         """Run the algorithm and return selected samples.
         :param x: the training set.
         :param y: the labels of the training set.
         """
 
-        self.x = x
-        self.y = y
-        self.neigh.fit(x)
-        self.neigh_dist, self.neigh_ind = self.neigh.kneighbors(x)
-
         # start the EGDIS algorithm
+        # select from the boundary samples.
+        selected_boundary, irrelevance_scores = self.select_boundary(x, y)
+
         # calculate the irrelevance of each sample, 0 means no neighbors have different labels.
-        irrelevance_scores = np.array([self._irrelevance(x_kneighbors) for x_kneighbors in self.neigh_ind])
         dense_x = self.neigh_ind[irrelevance_scores == 0]
         unique_x = np.unique(dense_x)
 
@@ -84,10 +94,6 @@ class EGDIS(object):
         selected = [self._check_densest(x_kneighbors, dense_scores, unique_x) for x_kneighbors in dense_x]
         selected = dense_x[selected]
         selected = selected[:, 0]
-
-        # select from the boundary samples.
-        selected_boundary = self.neigh_ind[irrelevance_scores >= int(self.k / 2)]
-        selected_boundary = selected_boundary[:, 0]
 
         return np.concatenate((selected, selected_boundary))
 
@@ -220,44 +226,50 @@ class WCL(object):
     difficulty with weakness. If weakness is 0, and the score is small, then the score is enlarged. If weakness is large
     , then the score is scaled to a smaller value."""
 
-    def __init__(self):
-        """Init a wcl instance."""
+    def __init__(self, k=4):
+        """Init a wcl instance.
+        :param k: the nearest neighbor parameter, should be k+1 if the instance is in the dataset.
+        """
 
         self.cl = CL()
-        self.pop = None
+        self.egdis = EGDIS(k=k)
 
-    def fit_dataset(self, classes, dataset):
+    def fit_dataset(self, classes=None, dataset=None, clf=None):
         """Fit the dataset information.
         :param classes: the number of classes.
         :param dataset: the name string of the dataset.
         """
 
-        self.cl.fit_dataset(classes, dataset)
-        self.pop = POP()
+        if clf:
+            self.cl.fit_dataset(clf=clf)
+        else:
+            self.cl.fit_dataset(classes, dataset)
 
-    def fit(self, x, y, mode=1):
+    def fit(self, x, y, classes, mode=1):
         """Weight the CL scores with weakness.
         :param mode: which weight mode to use.
         :param x: the training set.
         :param y: the the label of the samples.
         """
 
-        weakness = self.pop.fit(x, y)
-        _, scores = self.cl.fit(x, y)
-        # attempt 1: scale down the non-boundary samples with 1/e^(weakness/128).
-        if mode == 1:
-            weighted_scores = scores * 1 / np.exp(weakness / 128)
+        selected_boundary_idx, _ = self.egdis.select_boundary(x, y)
+        _, scores = self.cl.fit(x, to_categorical(y, num_classes=classes))
+        # # attempt 1: scale down the non-boundary samples with 1/e^(weakness/128).
+        # if mode == 1:
+        #     weighted_scores = scores * 1 / np.exp(weakness / 128)
+        #
+        # # attempt 2: scale up the boundary samples, keep all boundary samples.
+        # if mode == 2:
+        #     weighted_scores = scores.copy()
+        #     weighted_scores[weakness == 0] = 1
+        #
+        # # attempt 3: hybrid method.
+        # if mode == 3:
+        #     weighted_scores = scores * 1 / np.exp(weakness / 128)
+        #     weighted_scores[weakness == 0] = 1
 
-        # attempt 2: scale up the boundary samples, keep all boundary samples.
-        if mode == 2:
-            weighted_scores = scores.copy()
-            weighted_scores[weakness == 0] = 1
+        # rank = rank_data_according_to_score(weighted_scores)
 
-        # attempt 3: hybrid method.
-        if mode == 3:
-            weighted_scores = scores * 1 / np.exp(weakness / 128)
-            weighted_scores[weakness == 0] = 1
+        # return rank, weighted_scores
 
-        rank = rank_data_according_to_score(weighted_scores)
-
-        return rank, weighted_scores
+        return scores, selected_boundary_idx
