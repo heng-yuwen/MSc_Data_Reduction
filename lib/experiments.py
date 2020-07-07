@@ -159,7 +159,7 @@ def check_device():
     return device
 
 
-def train_with_original(train, valid, test, net, dataset, batch_size=128, name="whole"):
+def train_with_original(train, valid, test, net, dataset, batch_size=128, name="whole", stage=1):
     best_acc = 0  # best test accuracy
     best_state = None
 
@@ -198,17 +198,21 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128, name="
 
     history = {"acc": [], "val_acc": [], "loss": [], "val_loss": [], "test_acc": 0, "test_loss": 0}
 
-    for epoch in range(350):
-        if epoch < 150:
-            optimizer = optim.SGD(net.parameters(), lr=0.1,
-                                  momentum=0.9, weight_decay=5e-4)
-        elif epoch < 250:
-            optimizer = optim.SGD(net.parameters(), lr=0.01,
-                                  momentum=0.9, weight_decay=5e-4)
-        else:
-            optimizer = optim.SGD(net.parameters(), lr=0.001,
-                                  momentum=0.9, weight_decay=5e-4)
+    if stage == 1:
+        optimizer = optim.SGD(net.parameters(), lr=0.1,
+                              momentum=0.9, weight_decay=5e-4)
+        epochs = 150
+    elif stage == 2:
 
+        optimizer = optim.SGD(net.parameters(), lr=0.01,
+                              momentum=0.9, weight_decay=5e-4)
+        epochs = 100
+    else:
+        optimizer = optim.SGD(net.parameters(), lr=0.001,
+                              momentum=0.9, weight_decay=5e-4)
+        epochs = 100
+
+    for epoch in range(epochs):
         train_acc, train_loss = train_epoch(trainloader, epoch, net, device, optimizer, criterion)
         valid_acc, valid_loss, best_acc, state = valid_epoch(validloader, epoch, net, device, criterion, best_acc)
         if state:
@@ -223,12 +227,13 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128, name="
     history["test_loss"] = test_loss
 
     print("Saving best model parameters with validation acc: {}".format(best_acc))
-    torch.save(best_state, os.path.join(os.getcwd(), "models", dataset, name + "_set_ckpt.pth"))
+    torch.save(best_state,
+               os.path.join(os.getcwd(), "models", dataset, name + "_stage_" + str(stage) + "_set_ckpt.pth"))
 
     return history
 
 
-def run_pop(train, valid, test, net, dataset, classes, batch_size=128, i=1):
+def run_pop(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     pop = POP()
 
@@ -242,7 +247,7 @@ def run_pop(train, valid, test, net, dataset, classes, batch_size=128, i=1):
     size = len(train[0][subset_idx])
     print("Selected {} samples for weakkness <= {}.".format(size, i))
     his = train_with_original((train[0][subset_idx], train[1][subset_idx]), valid, test, net, dataset,
-                              batch_size=batch_size, name="pop")
+                              batch_size=batch_size, name="pop", stage=stage)
     his["weakness"] = i
     his["size"] = size
 
@@ -252,7 +257,7 @@ def run_pop(train, valid, test, net, dataset, classes, batch_size=128, i=1):
     return history
 
 
-def run_egdis(train, valid, test, net, dataset, classes, batch_size=128):
+def run_egdis(train, valid, test, net, dataset, classes, batch_size=128, stage=1):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     # egdis = EGDIS()
 
@@ -262,12 +267,12 @@ def run_egdis(train, valid, test, net, dataset, classes, batch_size=128):
     print("Selected {} samples".format(len(selected_egdis_idx)))
 
     history = train_with_original((train[0][selected_egdis_idx], train[1][selected_egdis_idx]), valid, test, net,
-                                  dataset, batch_size=batch_size, name="egdis")
+                                  dataset, batch_size=batch_size, name="egdis", stage=stage)
     history["size"] = len(selected_egdis_idx)
     return history
 
 
-def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1):
+def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     cl = CL()
     cl.fit_dataset(classes=classes, dataset=dataset)
@@ -283,14 +288,14 @@ def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1):
     print("------------------ Start to select subsets ------------------")
     print("Selected {} percent training data.".format(i * 10))
     his = train_with_original((train[0][selected_data_idx], train[1][selected_data_idx]), valid, test, net,
-                              dataset, batch_size=batch_size, name="cl")
+                              dataset, batch_size=batch_size, name="cl", stage=stage)
     his["size"] = len(selected_data_idx)
     history.append(his)
 
     return history
 
 
-def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1):
+def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1):
     print("Now try to run the WCL algorithm")
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     wcl = WCL()
@@ -311,7 +316,7 @@ def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1):
     seleced_idx = np.union1d(selected_boundary_idx, selected_data_idx)
     print("The unique selected subset size is: {}".format(len(seleced_idx)))
     his = train_with_original((train[0][seleced_idx], train[1][seleced_idx]), valid, test, net,
-                              dataset, batch_size=batch_size, name="wcl")
+                              dataset, batch_size=batch_size, name="wcl", stage=stage)
     his["size"] = len(seleced_idx)
     history.append(his)
 
