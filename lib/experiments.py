@@ -13,7 +13,7 @@ from tensorflow.keras.utils import to_categorical
 from torch.utils.data import TensorDataset, Dataset
 
 from lib.data_loader import load_cifar10
-from lib.reduction_algorithms import POP, EGDIS, CL, WCL
+from lib.reduction_algorithms import POP, CL, WCL
 from .utils import progress_bar
 
 
@@ -122,9 +122,6 @@ def valid_epoch(validloader, epoch, net, device, criterion, best_acc):
             'acc': acc,
             'epoch': epoch,
         }
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt.pth')
         best_acc = acc
     else:
         state = None
@@ -162,7 +159,7 @@ def check_device():
     return device
 
 
-def train_with_original(train, valid, test, net, dataset, batch_size=128):
+def train_with_original(train, valid, test, net, dataset, batch_size=128, name="whole"):
     best_acc = 0  # best test accuracy
     best_state = None
 
@@ -201,7 +198,7 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128):
 
     history = {"acc": [], "val_acc": [], "loss": [], "val_loss": [], "test_acc": 0, "test_loss": 0}
 
-    for epoch in range(1):
+    for epoch in range(350):
         if epoch < 150:
             optimizer = optim.SGD(net.parameters(), lr=0.1,
                                   momentum=0.9, weight_decay=5e-4)
@@ -226,12 +223,12 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128):
     history["test_loss"] = test_loss
 
     print("Saving best model parameters with validation acc: {}".format(best_acc))
-    torch.save(best_state, os.path.join(os.getcwd(), "models", dataset, "whole_training_set_ckpt.pth"))
+    torch.save(best_state, os.path.join(os.getcwd(), "models", dataset, name + "_set_ckpt.pth"))
 
     return history
 
 
-def run_pop(train, valid, test, net, dataset, classes, batch_size=128):
+def run_pop(train, valid, test, net, dataset, classes, batch_size=128, i=1):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     pop = POP()
 
@@ -239,24 +236,25 @@ def run_pop(train, valid, test, net, dataset, classes, batch_size=128):
     sample_weakness = pop.fit(compressed_train_x, compressed_train_y)
     print("------------------ Start to select subsets ------------------")
     history = []
-    for i in range(1, int(sample_weakness.max() + 1), 3):
-        subset_idx = sample_weakness <= i
-        size = len(train[0][subset_idx])
-        print("Selected {} samples for weakkness <= {}.".format(size, i))
-        his = train_with_original((train[0][subset_idx], train[1][subset_idx]), valid, test, net, dataset,
-                                  batch_size=batch_size)
-        his["weakness"] = i
-        his["size"] = size
 
-        history.append(his)
-        print("------------------------------------------------------------")
+    # for i in range(1, int(sample_weakness.max()), 3):
+    subset_idx = sample_weakness <= i
+    size = len(train[0][subset_idx])
+    print("Selected {} samples for weakkness <= {}.".format(size, i))
+    his = train_with_original((train[0][subset_idx], train[1][subset_idx]), valid, test, net, dataset,
+                              batch_size=batch_size, name="pop")
+    his["weakness"] = i
+    his["size"] = size
+
+    history.append(his)
+    print("------------------------------------------------------------")
 
     return history
 
 
 def run_egdis(train, valid, test, net, dataset, classes, batch_size=128):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
-    egdis = EGDIS()
+    # egdis = EGDIS()
 
     print("Now try to run the algorithm EGDIS with the generated sample dataset.")
     selected_egdis_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset, "selected_egdis_idx.npy"))
@@ -264,35 +262,35 @@ def run_egdis(train, valid, test, net, dataset, classes, batch_size=128):
     print("Selected {} samples".format(len(selected_egdis_idx)))
 
     history = train_with_original((train[0][selected_egdis_idx], train[1][selected_egdis_idx]), valid, test, net,
-                                  dataset, batch_size=batch_size)
+                                  dataset, batch_size=batch_size, name="egdis")
     history["size"] = len(selected_egdis_idx)
     return history
 
 
-def run_cl(train, valid, test, net, dataset, classes, batch_size=128):
+def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     cl = CL()
     cl.fit_dataset(classes=classes, dataset=dataset)
     rank, scores = cl.fit(compressed_train_x, to_categorical(compressed_train_y, num_classes=classes))
     history = []
 
-    for i in range(1, 10, 2):
-        percent = i / 10.
-        selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
-                                             replace=False,
-                                             p=scores / scores.sum())
+    # for i in range(1, 10, 2):
+    percent = i / 10.
+    selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
+                                         replace=False,
+                                         p=scores / scores.sum())
 
-        print("------------------ Start to select subsets ------------------")
-        print("Selected {} percent training data.".format(i * 10))
-        his = train_with_original((train[0][selected_data_idx], train[1][selected_data_idx]), valid, test, net,
-                                  dataset, batch_size=batch_size)
-        his["size"] = len(selected_data_idx)
-        history.append(his)
+    print("------------------ Start to select subsets ------------------")
+    print("Selected {} percent training data.".format(i * 10))
+    his = train_with_original((train[0][selected_data_idx], train[1][selected_data_idx]), valid, test, net,
+                              dataset, batch_size=batch_size, name="cl")
+    his["size"] = len(selected_data_idx)
+    history.append(his)
 
     return history
 
 
-def run_wcl(train, valid, test, net, dataset, classes, batch_size=128):
+def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1):
     print("Now try to run the WCL algorithm")
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     wcl = WCL()
@@ -300,21 +298,21 @@ def run_wcl(train, valid, test, net, dataset, classes, batch_size=128):
     scores, selected_boundary_idx = wcl.fit(compressed_train_x, compressed_train_y, classes)
     print("Selected {} boundary instances.".format(len(selected_boundary_idx)))
     history = []
-    for i in range(1, 10, 2):
-        percent = i / 10.
-        selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
-                                             replace=False, p=scores / scores.sum())
-        print(
-            "Select {:.2f} percent samples, {} overlapping with the pre-selected boundary samples".format(percent * 100,
-                                                                                                          len(
-                                                                                                              np.intersect1d(
-                                                                                                                  selected_boundary_idx,
-                                                                                                                  selected_data_idx))))
-        seleced_idx = np.union1d(selected_boundary_idx, selected_data_idx)
-        print("The unique selected subset size is: {}".format(len(seleced_idx)))
-        his = train_with_original((train[0][seleced_idx], train[1][seleced_idx]), valid, test, net,
-                                  dataset, batch_size=batch_size)
-        his["size"] = len(seleced_idx)
-        history.append(his)
+    # for i in range(1, 10, 2):
+    percent = i / 10.
+    selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
+                                         replace=False, p=scores / scores.sum())
+    print(
+        "Select {:.2f} percent samples, {} overlapping with the pre-selected boundary samples".format(percent * 100,
+                                                                                                      len(
+                                                                                                          np.intersect1d(
+                                                                                                              selected_boundary_idx,
+                                                                                                              selected_data_idx))))
+    seleced_idx = np.union1d(selected_boundary_idx, selected_data_idx)
+    print("The unique selected subset size is: {}".format(len(seleced_idx)))
+    his = train_with_original((train[0][seleced_idx], train[1][seleced_idx]), valid, test, net,
+                              dataset, batch_size=batch_size, name="wcl")
+    his["size"] = len(seleced_idx)
+    history.append(his)
 
     return history

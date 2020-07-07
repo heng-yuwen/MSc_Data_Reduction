@@ -9,6 +9,7 @@ from lib.experiments import load_dataset, run_wcl, train_with_original, run_pop,
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--experiment', default=1, type=int, help='Run which experiment')
+parser.add_argument('--select', default=1, type=int, help='Run which stage')
 args = parser.parse_args()
 
 x_train, x_valid, x_test, y_train, y_valid, y_test = load_dataset("cifar10")
@@ -29,7 +30,7 @@ if args.experiment == 1:
 # Experiment 2: train the POP selected dataset
 if args.experiment == 2:
     history = run_pop((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
-                      batch_size=batch_size)
+                      batch_size=batch_size, i=args.select)
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar10", "pop_his_size_" + str(his["size"]) + ".npy"), history)
     print("History saved.")
@@ -44,7 +45,7 @@ if args.experiment == 3:
 # Experiment 4: train the CL selected dataset
 if args.experiment == 4:
     history = run_cl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
-                     batch_size=batch_size)
+                     batch_size=batch_size, i=args.select)
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar10", "cl_his_size_" + str(his["size"]) + ".npy"), history)
     print("History saved.")
@@ -52,7 +53,7 @@ if args.experiment == 4:
 # Experiment 5: train the WCL selected dataset
 if args.experiment == 5:
     history = run_wcl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
-                      batch_size=batch_size)
+                      batch_size=batch_size, i=args.select)
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar10", "wcl_his_size_" + str(his["size"]) + ".npy"), history)
     print("History saved.")
