@@ -8,8 +8,8 @@ import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
-from keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.utils import to_categorical
 from torch.utils.data import TensorDataset, Dataset
 
 from lib.data_loader import load_cifar10
@@ -242,7 +242,7 @@ def run_pop(train, valid, test, net, dataset, classes, batch_size=128):
     for i in range(1, int(sample_weakness.max() + 1), 3):
         subset_idx = sample_weakness <= i
         size = len(train[0][subset_idx])
-        print("Selected {} samples.".format(size))
+        print("Selected {} samples for weakkness <= {}.".format(size, i))
         his = train_with_original((train[0][subset_idx], train[1][subset_idx]), valid, test, net, dataset,
                                   batch_size=batch_size)
         his["weakness"] = i
