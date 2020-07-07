@@ -201,7 +201,7 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128):
 
     history = {"acc": [], "val_acc": [], "loss": [], "val_loss": [], "test_acc": 0, "test_loss": 0}
 
-    for epoch in range(350):
+    for epoch in range(1):
         if epoch < 150:
             optimizer = optim.SGD(net.parameters(), lr=0.1,
                                   momentum=0.9, weight_decay=5e-4)
@@ -297,8 +297,7 @@ def run_wcl(train, valid, test, net, dataset, classes, batch_size=128):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     wcl = WCL()
     wcl.fit_dataset(classes=classes, dataset=dataset)
-
-    scores, selected_boundary_idx = wcl.fit(train[0], train[1], classes)
+    scores, selected_boundary_idx = wcl.fit(compressed_train_x, compressed_train_y, classes)
     print("Selected {} boundary instances.".format(len(selected_boundary_idx)))
     history = []
     for i in range(1, 10, 2):
