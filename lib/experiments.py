@@ -180,7 +180,7 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128):
     if device == 'cuda':
         net = torch.nn.DataParallel(net)
         cudnn.benchmark = True
-        print("Use GPU to train the network.")
+        print("Use multiple GPU to train the network.")
 
     criterion = nn.CrossEntropyLoss()
 
