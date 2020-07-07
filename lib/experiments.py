@@ -259,7 +259,7 @@ def run_egdis(train, valid, test, net, dataset, classes, batch_size=128):
     egdis = EGDIS()
 
     print("Now try to run the algorithm EGDIS with the generated sample dataset.")
-    selected_egdis_idx = egdis.fit(compressed_train_x, compressed_train_y)
+    selected_egdis_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset, "selected_egdis_idx.npy"))
 
     print("Selected {} samples".format(len(selected_egdis_idx)))
 
