@@ -89,6 +89,7 @@ def progress_bar(current, total, msg=None):
         sys.stdout.write(' ')
 
     if current < total - 1:
+        sys.stdout.write('              ')
         sys.stdout.write('\r')
     else:
         sys.stdout.write('\n')

@@ -87,7 +87,8 @@ def train_epoch(trainloader, epoch, net, device, optimizer, criterion):
                      "Loss: {:.3f} | Acc: {:.3f}% ({:d}/{:d})".format(train_loss / total, 100. * correct / total,
                                                                       correct, total))
     acc = 100. * correct / total
-    return acc
+    err = train_loss / total
+    return acc, err
 
 
 def valid_epoch(validloader, epoch, net, device, criterion, best_acc):
@@ -112,6 +113,7 @@ def valid_epoch(validloader, epoch, net, device, criterion, best_acc):
 
     # Save checkpoint.
     acc = 100. * correct / total
+    err = test_loss / total
     if acc > best_acc:
         print('Saving with better validation accuracy model: {:.3f}..'.format(acc))
         state = {
@@ -126,7 +128,7 @@ def valid_epoch(validloader, epoch, net, device, criterion, best_acc):
     else:
         state = None
 
-    return acc, best_acc, state
+    return acc, err, best_acc, state
 
 
 def test_epoch(testloader, net, device, criterion):
@@ -150,7 +152,8 @@ def test_epoch(testloader, net, device, criterion):
                                                                           100. * correct / total, correct, total))
 
     acc = 100. * correct / total
-    return acc
+    err = test_loss / total
+    return acc, err
 
 
 def check_device():
@@ -195,7 +198,7 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128):
     testloader = torch.utils.data.DataLoader(
         testset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-    history = {"acc": [], "val_acc": [], "test_acc": 0}
+    history = {"acc": [], "val_acc": [], "loss": [], "val_loss": [], "test_acc": 0, "test_loss": 0}
 
     for epoch in range(350):
         if epoch < 150:
@@ -208,15 +211,18 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128):
             optimizer = optim.SGD(net.parameters(), lr=0.001,
                                   momentum=0.9, weight_decay=5e-4)
 
-        train_acc = train_epoch(trainloader, epoch, net, device, optimizer, criterion)
-        valid_acc, best_acc, state = valid_epoch(validloader, epoch, net, device, criterion, best_acc)
+        train_acc, train_loss = train_epoch(trainloader, epoch, net, device, optimizer, criterion)
+        valid_acc, valid_loss, best_acc, state = valid_epoch(validloader, epoch, net, device, criterion, best_acc)
         if state:
             best_state = state
         history["acc"].append(train_acc)
+        history["loss"].append(train_loss)
         history["val_acc"].append(valid_acc)
+        history["val_loss"].append(valid_loss)
 
-    test_acc = test_epoch(testloader, net, device, criterion)
+    test_acc, test_loss = test_epoch(testloader, net, device, criterion)
     history["test_acc"] = test_acc
+    history["test_loss"] = test_loss
 
     print("Saving best model parameters with validation acc: {}".format(best_acc))
     torch.save(best_state, os.path.join(os.getcwd(), "models", dataset, "whole_training_set_ckpt.pth"))
