@@ -9,11 +9,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.utils import to_categorical
 from torch.utils.data import TensorDataset, Dataset
 
 from lib.data_loader import load_cifar10
-from lib.reduction_algorithms import POP, CL, WCL
+from lib.reduction_algorithms import POP
 from .utils import progress_bar
 
 
@@ -274,9 +273,10 @@ def run_egdis(train, valid, test, net, dataset, classes, batch_size=128, stage=1
 
 def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1):
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
-    cl = CL()
-    cl.fit_dataset(classes=classes, dataset=dataset)
-    rank, scores = cl.fit(compressed_train_x, to_categorical(compressed_train_y, num_classes=classes))
+    # cl = CL()
+    # cl.fit_dataset(classes=classes, dataset=dataset)
+    # rank, scores = cl.fit(compressed_train_x, to_categorical(compressed_train_y, num_classes=classes))
+    scores = np.load(os.path.join(os.getcwd(), "datasets", dataset, "cl_scores.npy"))
     history = []
 
     # for i in range(1, 10, 2):
@@ -298,9 +298,11 @@ def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage
 def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1):
     print("Now try to run the WCL algorithm")
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
-    wcl = WCL()
-    wcl.fit_dataset(classes=classes, dataset=dataset)
-    scores, selected_boundary_idx = wcl.fit(compressed_train_x, compressed_train_y, classes)
+    # wcl = WCL()
+    # wcl.fit_dataset(classes=classes, dataset=dataset)
+    scores = np.load(os.path.join(os.getcwd(), "datasets", dataset, "cl_scores.npy"))
+    selected_boundary_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset, "cl_boundary_idx.npy"))
+    # scores, selected_boundary_idx = wcl.fit(compressed_train_x, compressed_train_y, classes)
     print("Selected {} boundary instances.".format(len(selected_boundary_idx)))
     history = []
     # for i in range(1, 10, 2):

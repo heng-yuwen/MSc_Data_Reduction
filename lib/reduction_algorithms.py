@@ -212,7 +212,7 @@ class CL(object):
         :param y: the the label of the samples.
         """
 
-        scores = self.classifier_layer.predict_proba(x, batch_size=16)
+        scores = self.classifier_layer.predict_proba(x)
         assert scores.shape == y.shape, "The shapes don't match, {} with {}".format(scores.shape, y.shape)
         scores = scores * y
         scores = scores.sum(axis=1)
