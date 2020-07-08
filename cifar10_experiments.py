@@ -55,7 +55,7 @@ if args.experiment == 2:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "pop_stage_" + str(1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar10", "pop_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
     history = run_pop((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
@@ -70,7 +70,7 @@ if args.experiment == 3:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "egdis_stage_" + str(1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar10", "egdis_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
     history = run_egdis((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
@@ -83,7 +83,7 @@ if args.experiment == 4:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "cl_stage_" + str(1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar10", "cl_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
     history = run_cl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
@@ -98,7 +98,7 @@ if args.experiment == 5:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "wcl_stage_" + str(1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar10", "wcl_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
     history = run_wcl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
