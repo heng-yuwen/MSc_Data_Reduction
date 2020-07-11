@@ -211,6 +211,8 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128, name="
                               momentum=0.9, weight_decay=5e-4)
         epochs = 100
 
+    print("Use {} epochs".format(epochs))
+
     for epoch in range(epochs):
         train_acc, train_loss = train_epoch(trainloader, epoch, net, device, optimizer, criterion)
         valid_acc, valid_loss, best_acc, state = valid_epoch(validloader, epoch, net, device, criterion, best_acc)
