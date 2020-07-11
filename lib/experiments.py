@@ -216,6 +216,7 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128, name="
         valid_acc, valid_loss, best_acc, state = valid_epoch(validloader, epoch, net, device, criterion, best_acc)
         if state:
             best_state = state
+
         history["acc"].append(train_acc)
         history["loss"].append(train_loss)
         history["val_acc"].append(valid_acc)
