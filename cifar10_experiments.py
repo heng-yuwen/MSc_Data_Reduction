@@ -18,6 +18,8 @@ parser.add_argument('--numbers', default=0, type=int, help='Run which fixed numb
 args = parser.parse_args()
 
 x_train, x_valid, x_test, y_train, y_valid, y_test = load_dataset("cifar10")
+print("cifar10 loaded")
+
 print("There are {} training samples and {} validation samples".format(x_train.shape[0], x_valid.shape[0]))
 print("There are {} test samples.".format(x_test.shape[0]))
 
@@ -27,7 +29,6 @@ net = DenseNet121()
 print("This is records for stage {}".format(args.stage))
 
 numbers = args.numbers
-print(numbers)
 
 
 def load_net(weights):

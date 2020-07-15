@@ -18,6 +18,7 @@ parser.add_argument('--numbers', default=0, type=int, help='Run which fixed numb
 args = parser.parse_args()
 
 x_train, x_valid, x_test, y_train, y_valid, y_test = load_dataset("cifar100")
+print("cifar100 loaded")
 print("There are {} training samples and {} validation samples".format(x_train.shape[0], x_valid.shape[0]))
 print("There are {} test samples.".format(x_test.shape[0]))
 
@@ -27,7 +28,6 @@ net = DenseNet121(num_classes=100)
 print("This is records for stage {}".format(args.stage))
 
 numbers = args.numbers
-print(numbers)
 
 
 def load_net(weights):
@@ -44,13 +44,13 @@ if args.experiment == 1:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "whole_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar100", "whole_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
-    history = train_with_original((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10",
+    history = train_with_original((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100",
                                   batch_size=batch_size, stage=args.stage)
 
-    np.save(os.path.join(os.getcwd(), "models", "cifar10", "whole_train_his" + "_stage_" + str(args.stage) + ".npy"),
+    np.save(os.path.join(os.getcwd(), "models", "cifar100", "whole_train_his" + "_stage_" + str(args.stage) + ".npy"),
             history)
     print("History saved.")
 
@@ -60,13 +60,13 @@ if args.experiment == 2:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "pop_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar100", "pop_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
-    history = run_pop((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
+    history = run_pop((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
                       batch_size=batch_size, i=args.select, stage=args.stage, num_samples=numbers)
     for his in history:
-        np.save(os.path.join(os.getcwd(), "models", "cifar10",
+        np.save(os.path.join(os.getcwd(), "models", "cifar100",
                              "pop_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
     print("History saved.")
 
@@ -77,12 +77,13 @@ if args.experiment == 3:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "egdis_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar100", "egdis_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
-    history = run_egdis((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
+    history = run_egdis((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
                         batch_size=batch_size, stage=args.stage)
-    np.save(os.path.join(os.getcwd(), "models", "cifar10", "egdis_his" + "_stage_" + str(args.stage) + ".npy"), history)
+    np.save(os.path.join(os.getcwd(), "models", "cifar100", "egdis_his" + "_stage_" + str(args.stage) + ".npy"),
+            history)
     print("History saved.")
 
 # Experiment 4: train the CL selected dataset
@@ -92,13 +93,13 @@ if args.experiment == 4:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "cl_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar100", "cl_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
-    history = run_cl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
+    history = run_cl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
                      batch_size=batch_size, i=args.select, stage=args.stage, num_samples=numbers)
     for his in history:
-        np.save(os.path.join(os.getcwd(), "models", "cifar10",
+        np.save(os.path.join(os.getcwd(), "models", "cifar100",
                              "cl_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
     print("History saved.")
 
@@ -109,12 +110,12 @@ if args.experiment == 5:
     if args.stage != 1:
         print("load parameters")
         checkpoint = torch.load(
-            os.path.join(os.getcwd(), "models", "cifar10", "wcl_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
+            os.path.join(os.getcwd(), "models", "cifar100", "wcl_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
-    history = run_wcl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
+    history = run_wcl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
                       batch_size=batch_size, i=args.select, stage=args.stage, num_samples=numbers)
     for his in history:
-        np.save(os.path.join(os.getcwd(), "models", "cifar10",
+        np.save(os.path.join(os.getcwd(), "models", "cifar100",
                              "wcl_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
     print("History saved.")
