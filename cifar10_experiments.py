@@ -14,6 +14,7 @@ parser.add_argument('--experiment', default=1, type=int, help='Run which experim
 parser.add_argument('--select', default=1, type=int, help='Run which stage')
 parser.add_argument('--batch_size', default=256, type=int, help='Traning batch size')
 parser.add_argument('--stage', default=1, type=int, help='Run which substage')
+parser.add_argument('--numbers', default=0, type=int, help='Run which fixed number of samples')
 args = parser.parse_args()
 
 x_train, x_valid, x_test, y_train, y_valid, y_test = load_dataset("cifar10")
@@ -25,7 +26,8 @@ net = DenseNet121()
 
 print("This is records for stage {}".format(args.stage))
 
-numbers = 6506
+numbers = args.numbers
+print(numbers)
 
 
 def load_net(weights):
