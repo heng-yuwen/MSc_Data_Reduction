@@ -113,7 +113,7 @@ if args.experiment == 5:
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
     history = run_wcl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar10", 10,
-                      batch_size=batch_size, i=args.select, stage=args.stage, num_samples=0)
+                      batch_size=batch_size, i=args.select, stage=args.stage, num_samples=numbers)
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar10",
                              "wcl_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
