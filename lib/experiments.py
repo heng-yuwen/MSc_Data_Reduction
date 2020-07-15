@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, Dataset
 
-from lib.data_loader import load_cifar10
+from lib.data_loader import load_cifar10, load_cifar100
 from lib.reduction_algorithms import POP
 from .utils import progress_bar
 
@@ -43,6 +43,9 @@ def load_dataset(dataset):
     if dataset == "cifar10":
         # load cifar10 datasets
         (x_train, y_train), (x_test, y_test) = load_cifar10()
+    elif dataset == "cifar100":
+        # load cifar10 datasets
+        (x_train, y_train), (x_test, y_test) = load_cifar100()
     else:
         raise AttributeError("Dataset name \"{}\" is not supported.".format(dataset))
 
