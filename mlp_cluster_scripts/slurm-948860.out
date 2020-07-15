@@ -1,0 +1,77 @@
+2020-06-13 09:13:20.639455: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcuda.so.1
+2020-06-13 09:13:20.859314: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 0 with properties: 
+pciBusID: 0000:04:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:20.861491: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 1 with properties: 
+pciBusID: 0000:05:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:20.863674: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 2 with properties: 
+pciBusID: 0000:08:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:20.865820: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 3 with properties: 
+pciBusID: 0000:09:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:21.138690: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudart.so.10.1
+2020-06-13 09:13:21.947115: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcublas.so.10
+2020-06-13 09:13:22.376244: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcufft.so.10
+2020-06-13 09:13:22.685384: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcurand.so.10
+2020-06-13 09:13:23.413434: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcusolver.so.10
+2020-06-13 09:13:23.608458: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcusparse.so.10
+2020-06-13 09:13:24.856771: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudnn.so.7
+2020-06-13 09:13:24.874751: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1697] Adding visible gpu devices: 0, 1, 2, 3
+2020-06-13 09:13:29.601481: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 FMA
+2020-06-13 09:13:29.725808: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 1696115000 Hz
+2020-06-13 09:13:29.726184: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x55c99a016c30 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+2020-06-13 09:13:29.726325: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
+2020-06-13 09:13:30.583535: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 0 with properties: 
+pciBusID: 0000:04:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:30.586124: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 1 with properties: 
+pciBusID: 0000:05:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:30.587965: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 2 with properties: 
+pciBusID: 0000:08:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:30.591925: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1555] Found device 3 with properties: 
+pciBusID: 0000:09:00.0 name: GeForce GTX 1060 6GB computeCapability: 6.1
+coreClock: 1.7085GHz coreCount: 10 deviceMemorySize: 5.94GiB deviceMemoryBandwidth: 178.99GiB/s
+2020-06-13 09:13:30.592143: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudart.so.10.1
+2020-06-13 09:13:30.592347: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcublas.so.10
+2020-06-13 09:13:30.592470: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcufft.so.10
+2020-06-13 09:13:30.592589: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcurand.so.10
+2020-06-13 09:13:30.592727: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcusolver.so.10
+2020-06-13 09:13:30.592841: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcusparse.so.10
+2020-06-13 09:13:30.592955: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudnn.so.7
+2020-06-13 09:13:30.606083: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1697] Adding visible gpu devices: 0, 1, 2, 3
+2020-06-13 09:13:30.618422: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcudart.so.10.1
+2020-06-13 09:13:30.627082: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1096] Device interconnect StreamExecutor with strength 1 edge matrix:
+2020-06-13 09:13:30.627203: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1102]      0 1 2 3 
+2020-06-13 09:13:30.627385: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] 0:   N Y Y Y 
+2020-06-13 09:13:30.627484: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] 1:   Y N Y Y 
+2020-06-13 09:13:30.627581: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] 2:   Y Y N Y 
+2020-06-13 09:13:30.627693: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] 3:   Y Y Y N 
+2020-06-13 09:13:30.640017: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1241] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 5706 MB memory) -> physical GPU (device: 0, name: GeForce GTX 1060 6GB, pci bus id: 0000:04:00.0, compute capability: 6.1)
+2020-06-13 09:13:30.644400: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1241] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:1 with 5706 MB memory) -> physical GPU (device: 1, name: GeForce GTX 1060 6GB, pci bus id: 0000:05:00.0, compute capability: 6.1)
+2020-06-13 09:13:30.648218: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1241] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:2 with 5706 MB memory) -> physical GPU (device: 2, name: GeForce GTX 1060 6GB, pci bus id: 0000:08:00.0, compute capability: 6.1)
+2020-06-13 09:13:30.654319: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1241] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:3 with 5706 MB memory) -> physical GPU (device: 3, name: GeForce GTX 1060 6GB, pci bus id: 0000:09:00.0, compute capability: 6.1)
+2020-06-13 09:13:30.679452: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x55c99df3bd70 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+2020-06-13 09:13:30.679615: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): GeForce GTX 1060 6GB, Compute Capability 6.1
+2020-06-13 09:13:30.679830: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (1): GeForce GTX 1060 6GB, Compute Capability 6.1
+2020-06-13 09:13:30.679932: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (2): GeForce GTX 1060 6GB, Compute Capability 6.1
+2020-06-13 09:13:30.680020: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (3): GeForce GTX 1060 6GB, Compute Capability 6.1
+2020-06-13 09:15:47.817972: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcublas.so.10
+[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU'), PhysicalDevice(name='/physical_device:GPU:1', device_type='GPU'), PhysicalDevice(name='/physical_device:GPU:2', device_type='GPU'), PhysicalDevice(name='/physical_device:GPU:3', device_type='GPU')]
+
+Pre-trained NASNetLarge is loaded.
+There are 40000 training samples and 10000 validation samples
+There are 10000 test samples.
+Extracted training set features loaded
+Extracted validation set loaded
+Compressed training set features loaded
+Extractor loaded
+Classifier loaded
+Compressing features...
+  128/40000 [..............................] - ETA: 10:04 2048/40000 [>.............................] - ETA: 36s   4096/40000 [==>...........................] - ETA: 17s 6016/40000 [===>..........................] - ETA: 11s 8064/40000 [=====>........................] - ETA: 8s 10112/40000 [======>.......................] - ETA: 6s12160/40000 [========>.....................] - ETA: 5s14208/40000 [=========>....................] - ETA: 4s16256/40000 [===========>..................] - ETA: 3s18304/40000 [============>.................] - ETA: 2s20352/40000 [==============>...............] - ETA: 2s22400/40000 [===============>..............] - ETA: 1s24448/40000 [=================>............] - ETA: 1s26496/40000 [==================>...........] - ETA: 1s28544/40000 [====================>.........] - ETA: 1s30592/40000 [=====================>........] - ETA: 0s32640/40000 [=======================>......] - ETA: 0s34816/40000 [=========================>....] - ETA: 0s36864/40000 [==========================>...] - ETA: 0s38912/40000 [============================>.] - ETA: 0s40000/40000 [==============================] - 3s 74us/sample
+Extracted training set features saved
+Extracted validation set features saved
+Compressed training set features saved
