@@ -258,7 +258,7 @@ class WCL(object):
         # if mode == 1:
         #     weighted_scores = scores * 1 / np.exp(weakness / 128)
         #
-        # # attempt 2: scale up the boundary samples, keep all boundary samples.
+        # attempt 2: scale up the boundary samples, keep all boundary samples.
         # if mode == 2:
         #     weighted_scores = scores.copy()
         #     weighted_scores[weakness == 0] = 1

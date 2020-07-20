@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from lib.densenet import DenseNet121
-from lib.experiments import load_dataset, run_wcl, train_with_original, run_pop, run_egdis, run_cl
+from lib.experiments import load_dataset, run_wcl, train_with_original, run_pop, run_egdis, run_cl, run_wcl2, run_wcl3
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR100 Training')
 parser.add_argument('--experiment', default=1, type=int, help='Run which experiment')
@@ -15,6 +15,8 @@ parser.add_argument('--select', default=1, type=int, help='Run which stage')
 parser.add_argument('--batch_size', default=256, type=int, help='Traning batch size')
 parser.add_argument('--stage', default=1, type=int, help='Run which substage')
 parser.add_argument('--numbers', default=0, type=int, help='Run which fixed number of samples')
+parser.add_argument('--wcl', default=0, type=int, help='Use weighted rather than all boundary points')
+
 args = parser.parse_args()
 
 x_train, x_valid, x_test, y_train, y_valid, y_test = load_dataset("cifar100")
@@ -118,4 +120,36 @@ if args.experiment == 5:
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar100",
                              "wcl_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
+    print("History saved.")
+
+if args.experiment == 6:
+    print("Train with the wcl selected dataset (by weighted the boundary points).")
+
+    if args.stage != 1:
+        print("load parameters")
+        checkpoint = torch.load(
+            os.path.join(os.getcwd(), "models", "cifar100", "wcl2_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
+        weights = load_net(checkpoint["net"])
+        net.load_state_dict(weights)
+    history = run_wcl2((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
+                       batch_size=batch_size, i=args.select, stage=args.stage)
+    for his in history:
+        np.save(os.path.join(os.getcwd(), "models", "cifar100",
+                             "wcl2_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
+    print("History saved.")
+
+if args.experiment == 7:
+    print("Train with the wcl selected dataset (by weighted the boundary points).")
+
+    if args.stage != 1:
+        print("load parameters")
+        checkpoint = torch.load(
+            os.path.join(os.getcwd(), "models", "cifar100", "wcl3_stage_" + str(args.stage - 1) + "_set_ckpt.pth"))
+        weights = load_net(checkpoint["net"])
+        net.load_state_dict(weights)
+    history = run_wcl3((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
+                       batch_size=batch_size, i=args.select, stage=args.stage)
+    for his in history:
+        np.save(os.path.join(os.getcwd(), "models", "cifar100",
+                             "wcl3_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
     print("History saved.")
