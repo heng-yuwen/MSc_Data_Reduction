@@ -330,7 +330,7 @@ def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage
     return history
 
 
-def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1, num_samples=0, wcl=0):
+def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1, num_samples=0):
     print("Now try to run the WCL algorithm")
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     # wcl = WCL()
@@ -373,7 +373,7 @@ def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stag
     return history
 
 
-def run_wcl2(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1):
+def run_wcl2(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1, num_samples=0):
     # scale up boundary samples to score 1.
     print("Now try to run the WCL algorithm, by scaling up boundary sample scores")
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
@@ -387,7 +387,8 @@ def run_wcl2(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     # print("Selected {} boundary instances.".format(len(selected_boundary_idx)))
     history = []
     # for i in range(1, 10, 2):
-    num_samples = int(i / 10 * len(scores))
+    if num_samples == 0:
+        num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison.".format(num_samples))
     seleced_idx = np.random.choice(len(compressed_train_y), num_samples,
                                    replace=False, p=scores / scores.sum())
@@ -400,7 +401,7 @@ def run_wcl2(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     return history
 
 
-def run_wcl3(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1):
+def run_wcl3(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1, num_samples=0):
     # scale up boundary samples to score 1 from each subset to achieve balanced dataset.
     print("Now try to run the WCL algorithm, by scaling up boundary sample scores")
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
@@ -414,7 +415,8 @@ def run_wcl3(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     # print("Selected {} boundary instances.".format(len(selected_boundary_idx)))
     history = []
     # for i in range(1, 10, 2):
-    num_samples = int(i / 10 * len(scores))
+    if num_samples == 0:
+        num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison at each subset.".format(num_samples))
     idx_list = []
     for i in range(classes):

@@ -132,7 +132,7 @@ if args.experiment == 6:
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
     history = run_wcl2((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
-                       batch_size=batch_size, i=args.select, stage=args.stage)
+                       batch_size=batch_size, i=args.select, stage=args.stage, num_samples=numbers)
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar100",
                              "wcl2_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
@@ -148,7 +148,7 @@ if args.experiment == 7:
         weights = load_net(checkpoint["net"])
         net.load_state_dict(weights)
     history = run_wcl3((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
-                       batch_size=batch_size, i=args.select, stage=args.stage)
+                       batch_size=batch_size, i=args.select, stage=args.stage, num_samples=numbers)
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar100",
                              "wcl3_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
