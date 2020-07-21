@@ -101,12 +101,14 @@ class EGDIS(object):
 def _group_consecutives(attribute_with_label, step=0):
     """Return list of consecutive lists of numbers from vals (number list)."""
 
+
     run = []
     result = [run]
     expect_value = None
     expect_label = None
     for v in attribute_with_label:
-        if (v[1] == expect_label) or (expect_label is None):
+        if (v[1] == expect_label) or (expect_label is None) or (
+                expect_value is not None and (np.isclose(v[0], expect_value))):
             run.append(v[0])
             if v[0] == expect_value:
                 print("Find consecutive attributes, implement _resort is necessary.")
