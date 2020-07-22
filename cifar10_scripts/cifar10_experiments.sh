@@ -37,4 +37,4 @@ export DATASET_DIR=${TMP}/datasets/
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
 cd ..
 
-python cifar10_experiments.py --experiment 7 --select 3 --batch_size 256  --stage 2
+python cifar10_experiments.py --experiment 2 --select 11 --batch_size 256  --stage 3
