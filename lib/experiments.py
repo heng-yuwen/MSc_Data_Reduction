@@ -317,9 +317,15 @@ def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage
     else:
         # for i in range(1, 10, 2):
         percent = i / 10.
-        selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
-                                             replace=False,
-                                             p=scores / scores.sum())
+        if stage == 1:
+            selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
+                                                 replace=False,
+                                                 p=scores / scores.sum())
+            np.save(os.path.join(os.getcwd(), "datasets", dataset,
+                                 "cl_select_size_" + str(percent) + ".npy"), selected_data_idx)
+        else:
+            selected_data_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset,
+                                                     "cl_select_size_" + str(percent) + ".npy"))
 
         print("Selected {} percent training data.".format(i * 10))
     his = train_with_original((train[0][selected_data_idx], train[1][selected_data_idx]), valid, test, net,
