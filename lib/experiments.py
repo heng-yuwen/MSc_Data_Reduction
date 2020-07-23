@@ -348,14 +348,22 @@ def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stag
         while num_samples != 0:
             diff_data_idx = np.random.choice(len(compressed_train_y), num_samples,
                                              replace=False, p=scores / scores.sum())
+
             seleced_idx = np.union1d(seleced_idx, diff_data_idx)
             num_samples = num_full - len(seleced_idx)
         print("Start to select {} samples for a fair comparison.".format(len(seleced_idx)))
 
     else:
         percent = i / 10.
-        selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
-                                             replace=False, p=scores / scores.sum())
+
+        if stage == 1:
+            selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
+                                                 replace=False, p=scores / scores.sum())
+            np.save(os.path.join(os.getcwd(), "datasets", dataset,
+                                 "wcl_select_size_" + str(percent) + ".npy"), selected_data_idx)
+        else:
+            selected_data_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset,
+                                                     "wcl_select_size_" + str(percent) + ".npy"))
         print(
             "Select {:.2f} percent samples, {} overlapping with the pre-selected boundary samples".format(percent * 100,
                                                                                                           len(
@@ -390,8 +398,14 @@ def run_wcl2(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     if num_samples == 0:
         num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison.".format(num_samples))
-    seleced_idx = np.random.choice(len(compressed_train_y), num_samples,
-                                   replace=False, p=scores / scores.sum())
+    if stage == 1:
+        seleced_idx = np.random.choice(len(compressed_train_y), num_samples,
+                                       replace=False, p=scores / scores.sum())
+        np.save(os.path.join(os.getcwd(), "datasets", dataset,
+                             "wcl2_select_size_" + str(num_samples) + ".npy"), seleced_idx)
+    else:
+        seleced_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset,
+                                           "wcl2_select_size_" + str(num_samples) + ".npy"))
 
     his = train_with_original((train[0][seleced_idx], train[1][seleced_idx]), valid, test, net,
                               dataset, batch_size=batch_size, name="wcl2", stage=stage)
@@ -418,17 +432,24 @@ def run_wcl3(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     if num_samples == 0:
         num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison at each subset.".format(num_samples))
-    idx_list = []
-    for i in range(classes):
-        class_idx = np.argwhere(compressed_train_y == i)
-        class_idx = class_idx.reshape(-1)
-        if len(class_idx) >= int(num_samples / classes):
-            seleced_idx = np.random.choice(len(class_idx), int(num_samples / classes),
-                                           replace=False, p=scores[class_idx] / scores[class_idx].sum())
-            idx_list.append(class_idx[seleced_idx])
-        else:
-            raise AttributeError("No enough samples for class {}".format(i + 1))
-    seleced_idx = reduce(np.union1d, idx_list)
+    if stage == 1:
+        idx_list = []
+        for i in range(classes):
+            class_idx = np.argwhere(compressed_train_y == i)
+            class_idx = class_idx.reshape(-1)
+            if len(class_idx) >= int(num_samples / classes):
+                seleced_idx = np.random.choice(len(class_idx), int(num_samples / classes),
+                                               replace=False, p=scores[class_idx] / scores[class_idx].sum())
+                idx_list.append(class_idx[seleced_idx])
+            else:
+                raise AttributeError("No enough samples for class {}".format(i + 1))
+        seleced_idx = reduce(np.union1d, idx_list)
+        np.save(os.path.join(os.getcwd(), "datasets", dataset,
+                             "wcl3_select_size_" + str(num_samples) + ".npy"), seleced_idx)
+    else:
+        seleced_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset,
+                                           "wcl3_select_size_" + str(num_samples) + ".npy"))
+
     print("Selected {} samples from all the classes".format(len(seleced_idx)))
     his = train_with_original((train[0][seleced_idx], train[1][seleced_idx]), valid, test, net,
                               dataset, batch_size=batch_size, name="wcl3", stage=stage)
