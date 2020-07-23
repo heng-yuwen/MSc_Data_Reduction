@@ -186,6 +186,13 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128, name="
         cudnn.benchmark = True
         print("Use multiple GPU to train the network.")
 
+    if stage != 1 and (name != "wcl" and dataset != "cifar100"):
+        print("load parameters")
+        checkpoint = torch.load(
+            os.path.join(os.getcwd(), "models", dataset,
+                         name + "size_" + str(len(train[1])) + "_stage_" + str(stage - 1) + "_set_ckpt.pth"))
+        net.load_state_dict(checkpoint["net"])
+
     criterion = nn.CrossEntropyLoss()
 
     trainset = CustomTensorDataset(ndarrays=(train[0], train[1]), transform=transform_train)
@@ -228,13 +235,15 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128, name="
         history["val_acc"].append(valid_acc)
         history["val_loss"].append(valid_loss)
 
+    net.load_state_dict(best_state["net"])
     test_acc, test_loss = test_epoch(testloader, net, device, criterion)
     history["test_acc"] = test_acc
     history["test_loss"] = test_loss
 
     print("Saving best model parameters with validation acc: {}".format(best_acc))
     torch.save(best_state,
-               os.path.join(os.getcwd(), "models", dataset, name + "_stage_" + str(stage) + "_set_ckpt.pth"))
+               os.path.join(os.getcwd(), "models", dataset,
+                            name + "size_" + str(len(train[1])) + "_stage_" + str(stage) + "_set_ckpt.pth"))
 
     return history
 
@@ -317,7 +326,7 @@ def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage
     else:
         # for i in range(1, 10, 2):
         percent = i / 10.
-        if stage >= 0:
+        if stage >= 1:
             selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
                                                  replace=False,
                                                  p=scores / scores.sum())
@@ -362,7 +371,7 @@ def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stag
     else:
         percent = i / 10.
 
-        if stage >= 0:
+        if stage >= 1:
             selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
                                                  replace=False, p=scores / scores.sum())
             np.save(os.path.join(os.getcwd(), "datasets", dataset,
@@ -404,7 +413,7 @@ def run_wcl2(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     if num_samples == 0:
         num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison.".format(num_samples))
-    if stage >= 0:
+    if stage >= 1:
         seleced_idx = np.random.choice(len(compressed_train_y), num_samples,
                                        replace=False, p=scores / scores.sum())
         np.save(os.path.join(os.getcwd(), "datasets", dataset,
@@ -438,7 +447,7 @@ def run_wcl3(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     if num_samples == 0:
         num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison at each subset.".format(num_samples))
-    if stage >= 0:
+    if stage >= 1:
         idx_list = []
         for i in range(classes):
             class_idx = np.argwhere(compressed_train_y == i)
