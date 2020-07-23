@@ -317,7 +317,7 @@ def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage
     else:
         # for i in range(1, 10, 2):
         percent = i / 10.
-        if stage == 1:
+        if stage >= 0:
             selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
                                                  replace=False,
                                                  p=scores / scores.sum())
@@ -362,7 +362,7 @@ def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stag
     else:
         percent = i / 10.
 
-        if stage == 1:
+        if stage >= 0:
             selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
                                                  replace=False, p=scores / scores.sum())
             np.save(os.path.join(os.getcwd(), "datasets", dataset,
@@ -404,7 +404,7 @@ def run_wcl2(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     if num_samples == 0:
         num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison.".format(num_samples))
-    if stage == 1:
+    if stage >= 0:
         seleced_idx = np.random.choice(len(compressed_train_y), num_samples,
                                        replace=False, p=scores / scores.sum())
         np.save(os.path.join(os.getcwd(), "datasets", dataset,
@@ -438,7 +438,7 @@ def run_wcl3(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
     if num_samples == 0:
         num_samples = int(i / 10 * len(scores))
     print("Start to select {} samples for a fair comparison at each subset.".format(num_samples))
-    if stage == 1:
+    if stage >= 0:
         idx_list = []
         for i in range(classes):
             class_idx = np.argwhere(compressed_train_y == i)
