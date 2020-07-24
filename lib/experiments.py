@@ -186,7 +186,7 @@ def train_with_original(train, valid, test, net, dataset, batch_size=128, name="
         cudnn.benchmark = True
         print("Use multiple GPU to train the network.")
 
-    if stage != 1 and (name != "wcl" and dataset != "cifar100"):
+    if stage != 1:
         print("load parameters")
         checkpoint = torch.load(
             os.path.join(os.getcwd(), "models", dataset,
