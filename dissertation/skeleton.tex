@@ -30,16 +30,7 @@
 \author{Yuwen Heng}
 
 \abstract{
-  This skeleton demonstrates how to use the \texttt{infthesis} style
-  for MSc dissertations in Artificial Intelligence, Cognitive Science,
-  Computer Science, Data Science, and Informatics. It also emphasises
-  the page limit, and that you must not deviate from the required
-  style.  The file \texttt{skeleton.tex} generates this document and
-  can be used as a starting point for your thesis. The abstract should
-  summarise your report and fit in the space on the first page.
-  
-  Training ML/DL models has become a major computational cost in the enterprise given its time-consuming iterative nature and the increasing scale of datasets. A key technique to reduce the cost is to reduce the training datasets via various data reductions techniques (e.g., sampling [1,2]) so that we only train models with a controlled much smaller dataset instead of the original one. However, data reduction inevitably reduces the accuracy of trained models. This project aims to systematically evaluate the impact of different data reductions on the relative accuracy of trained models, both analytically and empirically, and provide a general guideline for us to pick the right data reduction techniques for our learning tasks.
-
+Training deep neural networks can be resources-consuming. The budget required are increasing with the size of the dataset. During the past few decades, many research is dedicated to develop training procedures to accelerate the convergence speed of deep learning. However, we still need the whole dataset to train the network and paying for a large dataset may not pay back well if we can use a smaller subset to achieve an acceptable performance. To solve this issue, we first adapted and evaluated three methods, Patterns by Ordered Projections (POP), Enhanced Global Density-based Instance Selection (EGDIS), and Curriculum Learning (CL), to reduce the size of two image datasets, CIFAR10 and CIFAR100, for the classification task. Based on the analysis, we present our two contributions: the Weighted Curriculum Learning (WCL) and a trade-off framework. The WCL outperforms POP and EGDIS in terms of both classification accuracy and time complexity. The trade-off framework takes the acceptable relative accuracy and the whole dataset as the inputs to select a subset of samples that meets the demands. In addition, the framework is also extended to predict the amount of samples needed to achieve a particular accuracy with a given subset.
 }
 
 \maketitle
@@ -52,7 +43,7 @@ Any acknowledgements go here.
 
 
 \chapter{Introduction}
-
+Besides, paying for a large dataset may not pay back well if we can use a much smaller one to achieve an acceptable performance.
 The preliminary material of your report should contain:
 \begin{itemize}
 \item
