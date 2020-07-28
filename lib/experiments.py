@@ -315,62 +315,25 @@ def run_cl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage
     # cl.fit_dataset(classes=classes, dataset=dataset)
     # rank, scores = cl.fit(compressed_train_x, to_categorical(compressed_train_y, num_classes=classes))
     scores = np.load(os.path.join(os.getcwd(), "datasets", dataset, "cl_scores.npy"))
-    rank = np.asarray(sorted(range(len(scores)), key=lambda k: scores[k], reverse=True))
 
     history = []
     print("------------------ Start to select subsets ------------------")
-    if num_samples != 0:
-        selected_data_idx = rank[: num_samples]
-        print("Start to select {} samples for a fair comparison.".format(len(selected_data_idx)))
+    selected_data_idx = []
+    if num_samples == 0:
+        num_samples = int(i / 10 * len(compressed_train_y))
+        print("Select {} percent samples".format(i))
+    print("Select {} samples".format(num_samples))
 
-    else:
-        # for i in range(1, 10, 2):
-        percent = i / 10.
-        if stage >= 1:
-            selected_data_idx = rank[: int(percent * len(compressed_train_y))]
-            np.save(os.path.join(os.getcwd(), "datasets", dataset,
-                                 "cl_select_size_" + str(percent) + ".npy"), selected_data_idx)
-        else:
-            selected_data_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset,
-                                                     "cl_select_size_" + str(percent) + ".npy"))
+    for i in range(classes):
+        subset_idx = np.argwhere(compressed_train_y == i)
+        subset_scores = scores[subset_idx]
+        subset_rank = np.asarray(sorted(range(len(subset_scores)), key=lambda k: subset_scores[k], reverse=True))
+        subset_selected_idx = subset_rank[: int(num_samples / classes)]
+        selected_data_idx.append(subset_idx[subset_selected_idx])
+    # selected_data_idx = rank[: num_samples]
+    selected_data_idx = reduce(np.union1d, selected_data_idx)
+    print("Selected {} samples.".format(len(selected_data_idx)))
 
-        print("Selected {} percent training data.".format(i * 10))
-    his = train_with_original((train[0][selected_data_idx], train[1][selected_data_idx]), valid, test, net,
-                              dataset, batch_size=batch_size, name="cl", stage=stage)
-    his["size"] = len(selected_data_idx)
-    history.append(his)
-
-    return history
-
-
-def run_wcl0(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1, num_samples=0):
-    compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
-    # cl = CL()
-    # cl.fit_dataset(classes=classes, dataset=dataset)
-    # rank, scores = cl.fit(compressed_train_x, to_categorical(compressed_train_y, num_classes=classes))
-    scores = np.load(os.path.join(os.getcwd(), "datasets", dataset, "cl_scores.npy"))
-    history = []
-    print("------------------ Start to select subsets ------------------")
-    if num_samples != 0:
-        selected_data_idx = np.random.choice(len(compressed_train_y), num_samples,
-                                             replace=False,
-                                             p=scores / scores.sum())
-        print("Start to select {} samples for a fair comparison.".format(len(selected_data_idx)))
-
-    else:
-        # for i in range(1, 10, 2):
-        percent = i / 10.
-        if stage >= 1:
-            selected_data_idx = np.random.choice(len(compressed_train_y), int(percent * len(compressed_train_y)),
-                                                 replace=False,
-                                                 p=scores / scores.sum())
-            np.save(os.path.join(os.getcwd(), "datasets", dataset,
-                                 "wcl0_select_size_" + str(percent) + ".npy"), selected_data_idx)
-        else:
-            selected_data_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset,
-                                                     "wcl0_select_size_" + str(percent) + ".npy"))
-
-        print("Selected {} percent training data.".format(i * 10))
     his = train_with_original((train[0][selected_data_idx], train[1][selected_data_idx]), valid, test, net,
                               dataset, batch_size=batch_size, name="cl", stage=stage)
     his["size"] = len(selected_data_idx)
@@ -380,6 +343,41 @@ def run_wcl0(train, valid, test, net, dataset, classes, batch_size=128, i=1, sta
 
 
 def run_wcl(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1, num_samples=0):
+    compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
+    # Sampling selection selection
+    # cl = CL()
+    # cl.fit_dataset(classes=classes, dataset=dataset)
+    # rank, scores = cl.fit(compressed_train_x, to_categorical(compressed_train_y, num_classes=classes))
+    scores = np.load(os.path.join(os.getcwd(), "datasets", dataset, "cl_scores.npy"))
+    history = []
+    print("------------------ Start to select subsets ------------------")
+    if num_samples == 0:
+        num_samples = int(i / 10 * len(compressed_train_y))
+        print("Select {} percent samples".format(i))
+    print("Select {} samples".format(num_samples))
+
+    if stage == 1:
+        selected_data_idx = np.random.choice(len(compressed_train_y), num_samples,
+                                             replace=False,
+                                             p=scores / scores.sum())
+        np.save(os.path.join(os.getcwd(), "datasets", dataset,
+                             "im_wcl_select_size_" + str(num_samples) + ".npy"), selected_data_idx)
+        print("Save selected sample idx")
+    else:
+        selected_data_idx = np.load(os.path.join(os.getcwd(), "datasets", dataset,
+                                                 "im_wcl_select_size_" + str(num_samples) + ".npy"))
+        print("Load selected sample idx")
+    print("Selected {} samples for a fair comparison.".format(len(selected_data_idx)))
+
+    his = train_with_original((train[0][selected_data_idx], train[1][selected_data_idx]), valid, test, net,
+                              dataset, batch_size=batch_size, name="im_wcl", stage=stage)
+    his["size"] = len(selected_data_idx)
+    history.append(his)
+
+    return history
+
+
+def run_wcl4(train, valid, test, net, dataset, classes, batch_size=128, i=1, stage=1, num_samples=0):
     print("Now try to run the WCL algorithm")
     compressed_train_x, compressed_train_y = load_compressed_train_set(dataset, classes)
     # wcl = WCL()

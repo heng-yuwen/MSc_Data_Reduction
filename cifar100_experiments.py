@@ -78,12 +78,12 @@ if args.experiment == 4:
 
 # Experiment 5: train the WCL selected dataset
 if args.experiment == 5:
-    print("Train with the wcl selected dataset.")
+    print("Train with the im wcl selected dataset.")
     history = run_wcl((x_train, y_train), (x_valid, y_valid), (x_test, y_test), net, "cifar100", 100,
                       batch_size=batch_size, i=args.select, stage=args.stage, num_samples=numbers)
     for his in history:
         np.save(os.path.join(os.getcwd(), "models", "cifar100",
-                             "wcl_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
+                             "im_wcl_his_size_" + str(his["size"]) + "_stage_" + str(args.stage) + ".npy"), history)
     print("History saved.")
 
 if args.experiment == 6:
