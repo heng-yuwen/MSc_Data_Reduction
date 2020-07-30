@@ -1,7 +1,7 @@
 In this chapter, we begin with presenting the necessary background to understand the supervised learning and data reduction methods, as well as, other ideas required to understand our research method.  We we start with the structure of CNN and the training procedure. We then discuss the modern subset selection methods that can speed up the training procedure and outline their deficiencies. Next, we review the data reduction literature and present a CNN data reduction framework - use the network pre-trained on ImageNet to extract low-dimensional features and run the data reduction methods on extracted features. Furthermore, we cover the existing trade-off framework BlinkML \cite{Park2019a} in the context of maximum-likelihood estimation machine learning algorithms and explain why it is not suitable for deep neural network. Finally, we present TAPAS \cite{Istrate2019}, which is an accuracy predictor for deep neural network without training and has several properties that make it useful to build our trade-off framework.
 
 \section{Supervised Learning with CNN}
-CNN based supervised learning is a kind of machine learning task which learns the mapping between input visual data and output based on a set of well-labelled training samples. The visual data can be images, videos or even 3D models \cite{Song2020}. The CNN itself can be considered as a set of chained operations with trainable parameters. These parameters define the actual input-out mapping. For this reason, we use the symbol $f(x|\theta)$ to represent the output predicted by the CNN which takes the input $x$ with a particular parameter set $\theta$. Figure \ref{Fig.CNN} gives a basic CNN structure which is designed to classify images as cats or dogs. It contains two convolutional (Conv) layers, one max pooling layer and one fully connected (FC) layer. The FC layer is actually a multi-class logistic regression model which maps the outputs of the max pooling layer to the class scores. From this perspective, we can divide the CNN structure into two parts: feature extraction part and logistic regression part. The feature extraction part performs as a blackbox which transforms the input images to points in a lower-dimensional, linearly separable space.
+CNN based supervised learning is a kind of machine learning task which learns the mapping between input visual data and output based on a set of well-labelled training samples. The visual data can be images, videos or even 3D models \cite{Song2020}. The output score after the softmax operation can be considered as the probability for a given image belongs to each class, $P(class|image, network)$. The CNN itself can be considered as a set of chained operations with trainable parameters. These parameters define the actual input-out mapping. For this reason, we use the symbol $f(x|\theta)$ to represent the output score predicted by the CNN which takes the input $x$ with a particular parameter set $\theta$. Figure \ref{Fig.CNN} gives a basic CNN structure which is designed to classify images as cats or dogs. It contains two convolutional (Conv) layers, one max pooling layer and one fully connected (FC) layer. The FC layer is actually a multi-class logistic regression model which maps the outputs of the max pooling layer to the class scores. From this perspective, we can divide the CNN structure into two parts: feature extraction part and logistic regression part. The feature extraction part performs as a blackbox which transforms the input images to points in a lower-dimensional, linearly separable space.
 
  \begin{figure}[H]
  \centering
@@ -13,7 +13,7 @@ CNN based supervised learning is a kind of machine learning task which learns th
 If we use the symbol $y$ to represent the ground truth of the input sample $x$, use $L(f(x|\theta), y)$ to represent the loss function which measures the difference between the predicted output and the ground truth label, then the training process is to find the parameter set $\theta^*$ which minimise the average loss of the whole training set as fellows:
 \begin{equation}
 \label{dlopt}
-\theta^* = arg_{\theta}\ min\ \frac{1}{N}\sum^{N}_{i=1}L(f(x_i|\theta), y_i)
+\theta^* = \mathop{\arg\min}_{\theta}\ \frac{1}{N}\sum^{N}_{i=1}L(f(x_i|\theta), y_i)
 \end{equation}
 where the symbol $N$ stands for the number of samples in the training set. This turns the training process into an optimisation problem. Different from machine learning algorithms like logistic regression and support vector machine, the equation \ref{dlopt} is non-convex thus cannot be solved analytically \cite[p.~304]{Courville2016}. A number of techniques have been developed to solve the problem with the requirement that the loss function $L(.,.)$ is continuous. The basic one to train on large dataset is called stochastic gradient descent (SGD) which updates the parameters with the partial derivatives of a randomly selected sample. At each step, the new parameter is calculated with 
 
@@ -29,10 +29,26 @@ and $\eta$ is the step size whose typical value is between 0.1 to 0.001. A simpl
 \end{equation}
 where $M$ is the batch size of the subset. For CNN, batch size $M$ is often smaller than the training set size $N$ because it takes too much memory to fit the whole dataset. Usually we use 128 or 256 as the batch size. 
 
-\section{Importance Sampling}
-Since the mini-batch gradient method trains the network with a subset of samples at each step, how to select the samples becomes a problem in the deep learning literature. Instead of uniform sampling, importance sampling method ranks the sampling with the scores and selects a mini-batch based on different criteria. According to \cite{Hacohen2019a}, we can divide the importance sampling methods into two categories: \textbf{current hypothesis method} and \textbf{targer hypothesis method}. Current hypothesis method measures the importance based on the parameter set $\theta_t$ at step $t$ while targer hypothesis method is based on the final parameter set $\theta^*$. 
+\section{Mini-batch Sampling}
+Since the mini-batch gradient method trains the network with a subset of samples at each step, how to select the samples becomes a problem in the deep learning literature. Instead of uniform sampling, many researchers proposed to rank the samples with importance score or classification difficulty and selects a mini-batch based on different criteria. According to \cite{Hacohen2019a}, we can divide the sampling methods into two categories: \textbf{current hypothesis method} and \textbf{targer hypothesis method}. Current hypothesis method measures the samples based on the parameter set $\theta_t$ at step $t$ while targer hypothesis method is based on the final parameter set $\theta^*$. 
 
 \subsection{Current Hypothesis Method}
+Different authors have proposed a variety of current hypothesis methods. Specifically, in self-paced learning \cite{Kumar2010, Li2017}, active bias learning \cite{Chang2017}, and hard example mining \cite{Shrivastava2016}, the scores are calculated based on the sample difficulty, which is proportional to the classification score of the true class, $f(x|\theta, y)$. For importance sampling methods, the scores are calculated based on the gradient norm for each sample, $|\frac{\partial{L(f(x_i|\theta), y_i)}}{\partial{x_i}}|$. We finish this section by briefly explaining the actual implementations of these approaches.
+
+\subsubsection{Difficulty Based Method}
+
+Self-paced learning method tends to select easy samples which have a high classification score by injecting a pace function into the optimisation target function \ref{dlopt}:
+\begin{equation}
+\label{spl}
+\theta^* = \mathop{\arg\min}_{\theta, v}\ \sum^{N}_{i=1} v_iL(f(x_i|\theta), y_i) + \lambda \sum^{N}_{i=1}  v_i
+\end{equation}
+where $v$ is the score calculated by the pace function. The pace function can be either a simple step function \cite{Kumar2010} or a more complicated dynamic function which changes with step $t$ \cite{Li2017} as long as it can assign value 0 to samples. By minimising the target function \ref{spl}, the method would zero out hard examples which have higher loss $L$ thus keep only the easy samples. This makes the trained network more robust to outliers \cite{Meng2016}. 
+
+A potential problem of self-paced learning is that it would gradually increase the loss of hard examples \cite{Chang2017}. The possible solution is to use the active bias learning method, which is designed to select the uncertain samples whose classification score vary near the decision threshold. Chang et al. proposed and evaluated many self-paced methods and the representative one is called SGD Sampled by Threshold Closeness (SGD-STC) \cite{Chang2017}. It records the historical average classification probability $\bar{P}$ for each sample and the score is calculated with a equation that is proportional to $(1-\bar{P}) \times \bar{P}$. However, the problem is that we need extra space and computation to maintain the historical scores.
+
+Hard example mining is yet another heuristic method 
+
+\subsubsection{Importance Based Method}
 
 
 \subsection{Target Hypothesis Method}
