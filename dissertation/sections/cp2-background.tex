@@ -1,6 +1,42 @@
-In this chapter, we begin with presenting the necessary background to understand the deep convolutional neural network (deep CNN) and data reduction methods, as well as, other ideas required to understand our research method.  In the next section we we start with the structure of CNN and the gradient descent training procedure. We then discuss the modern research outputs that can speed up the training procedure and outline their deficiencies. Next, we review the data reduction literature and present a CNN data reduction framework - use the network pre-trained on ImageNet to extract low-dimensional features and run the data reduction methods on extracted features. Furthermore, we cover the existing trade-off framework in the context of maximum-likelihood estimation machine learning algorithms and explain why it is not suitable for deep neural network. Finally, we present TAPAS \cite{Istrate2019}, which is an accuracy predictor for deep neural network without training and has several properties that make it useful to build our trade-off framework.
+In this chapter, we begin with presenting the necessary background to understand the supervised learning and data reduction methods, as well as, other ideas required to understand our research method.  We we start with the structure of CNN and the training procedure. We then discuss the modern subset selection methods that can speed up the training procedure and outline their deficiencies. Next, we review the data reduction literature and present a CNN data reduction framework - use the network pre-trained on ImageNet to extract low-dimensional features and run the data reduction methods on extracted features. Furthermore, we cover the existing trade-off framework BlinkML \cite{Park2019a} in the context of maximum-likelihood estimation machine learning algorithms and explain why it is not suitable for deep neural network. Finally, we present TAPAS \cite{Istrate2019}, which is an accuracy predictor for deep neural network without training and has several properties that make it useful to build our trade-off framework.
 
-\section{Deep Convolutional Neural Network}
+\section{Supervised Learning with CNN}
+CNN based supervised learning is a kind of machine learning task which learns the mapping between input visual data and output based on a set of well-labelled training samples. The visual data can be images, videos or even 3D models \cite{Song2020}. The CNN itself can be considered as a set of chained operations with trainable parameters. These parameters define the actual input-out mapping. For this reason, we use the symbol $f(x|\theta)$ to represent the output predicted by the CNN which takes the input $x$ with a particular parameter set $\theta$. Figure \ref{Fig.CNN} gives a basic CNN structure which is designed to classify images as cats or dogs. It contains two convolutional (Conv) layers, one max pooling layer and one fully connected (FC) layer. The FC layer is actually a multi-class logistic regression model which maps the outputs of the max pooling layer to the class scores. From this perspective, we can divide the CNN structure into two parts: feature extraction part and logistic regression part. The feature extraction part performs as a blackbox which transforms the input images to points in a lower-dimensional, linearly separable space.
+
+ \begin{figure}[H]
+ \centering
+ \includegraphics[width=0.8\textwidth]{src/CNN.png}
+ \caption{A basic CNN structure to classify images between cats and dogs. The outputs of the penultimate layer are extracted lower-dimensional features of the input images. These features should be linearly separable to achieve a high classification accuracy}
+ \label{Fig.CNN}
+ \end{figure}
+
+If we use the symbol $y$ to represent the ground truth of the input sample $x$, use $L(f(x|\theta), y)$ to represent the loss function which measures the difference between the predicted output and the ground truth label, then the training process is to find the parameter set $\theta^*$ which minimise the average loss of the whole training set as fellows:
+\begin{equation}
+\label{dlopt}
+\theta^* = arg_{\theta}\ min\ \frac{1}{N}\sum^{N}_{i=1}L(f(x_i|\theta), y_i)
+\end{equation}
+where the symbol $N$ stands for the number of samples in the training set. This turns the training process into an optimisation problem. Different from machine learning algorithms like logistic regression and support vector machine, the equation \ref{dlopt} is non-convex thus cannot be solved analytically \cite[p.~304]{Courville2016}. A number of techniques have been developed to solve the problem with the requirement that the loss function $L(.,.)$ is continuous. The basic one to train on large dataset is called stochastic gradient descent (SGD) which updates the parameters with the partial derivatives of a randomly selected sample. At each step, the new parameter is calculated with 
+
+\begin{equation}
+	\theta_{t+1} = \theta_t - \eta
+ \frac{\partial{L(f(x|\theta), y)}}{\partial{\theta_t}}
+\end{equation}
+and $\eta$ is the step size whose typical value is between 0.1 to 0.001. A simple variant of SGD is mini-batch gradient descent which divides the training set into disjoint subsets and averages the gradients within the subset before updating the parameters:
+
+\begin{equation}
+	\theta_{t+1} = \theta_t - \eta \frac{1}{M} \sum_{i=1}^{M}
+ \frac{\partial{L(f(x_i|\theta), y_i)}}{\partial{\theta_t}}
+\end{equation}
+where $M$ is the batch size of the subset. For CNN, batch size $M$ is often smaller than the training set size $N$ because it takes too much memory to fit the whole dataset. Usually we use 128 or 256 as the batch size. 
+
+\section{Importance Sampling}
+Since the mini-batch gradient method trains the network with a subset of samples at each step, how to select the samples becomes a problem in the deep learning literature. Instead of uniform sampling, importance sampling method ranks the sampling with the scores and selects a mini-batch based on different criteria. According to \cite{Hacohen2019a}, we can divide the importance sampling methods into two categories: \textbf{current hypothesis method} and \textbf{targer hypothesis method}. Current hypothesis method measures the importance based on the parameter set $\theta_t$ at step $t$ while targer hypothesis method is based on the final parameter set $\theta^*$. 
+
+\subsection{Current Hypothesis Method}
+
+
+\subsection{Target Hypothesis Method}
+
 
 \section{Data Reduction Algorithms}
 
