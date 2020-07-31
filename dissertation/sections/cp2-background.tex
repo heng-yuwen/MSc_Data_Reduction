@@ -1,6 +1,7 @@
 In this chapter, we begin with presenting the necessary background to understand the supervised learning and data reduction methods, as well as, other ideas required to understand our research method.  We we start with the structure of CNN and the training procedure. We then discuss the modern subset selection methods that can speed up the training procedure and outline their deficiencies. Next, we review the data reduction literature and present a CNN data reduction framework - use the network pre-trained on ImageNet to extract low-dimensional features and run the data reduction methods on extracted features. Furthermore, we cover the existing trade-off framework BlinkML \cite{Park2019a} in the context of maximum-likelihood estimation machine learning algorithms and explain why it is not suitable for deep neural network. Finally, we present TAPAS \cite{Istrate2019}, which is an accuracy predictor for deep neural network without training and has several properties that make it useful to build our trade-off framework.
 
 \section{Supervised Learning with CNN}
+\label{slcnn}
 CNN based supervised learning is a kind of machine learning task which learns the mapping between input visual data and output based on a set of well-labelled training samples. The visual data can be images, videos or even 3D models \cite{Song2020}. The output score after the softmax operation can be considered as the probability for a given image belongs to each class, $P(class|image, network)$. The CNN itself can be considered as a set of chained operations with trainable parameters. These parameters define the actual input-out mapping. For this reason, we use the symbol $f(x|\theta)$ to represent the output score predicted by the CNN which takes the input $x$ with a particular parameter set $\theta$. Figure \ref{Fig.CNN} gives a basic CNN structure which is designed to classify images as cats or dogs. It contains two convolutional (Conv) layers, one max pooling layer and one fully connected (FC) layer. The FC layer is actually a multi-class logistic regression model which maps the outputs of the max pooling layer to the class scores. From this perspective, we can divide the CNN structure into two parts: feature extraction part and logistic regression part. The feature extraction part performs as a blackbox which transforms the input images to points in a lower-dimensional, linearly separable space.
 
  \begin{figure}[H]
@@ -33,7 +34,7 @@ where $M$ is the batch size of the subset. For CNN, batch size $M$ is often smal
 Since the mini-batch gradient method trains the network with a subset of samples at each step, how to select the samples becomes a problem in the deep learning literature. Instead of uniform sampling, many researchers proposed to rank the samples with importance score or classification difficulty and selects a mini-batch based on different criteria. According to \cite{Hacohen2019a}, we can divide the sampling methods into two categories: \textbf{current hypothesis method} and \textbf{targer hypothesis method}. Current hypothesis method measures the samples based on the parameter set $\theta_t$ at step $t$ while targer hypothesis method is based on the final parameter set $\theta^*$. 
 
 \subsection{Current Hypothesis Method}
-Different authors have proposed a variety of current hypothesis methods. Specifically, in self-paced learning \cite{Kumar2010, Li2017}, active bias learning \cite{Chang2017}, and hard example mining \cite{Shrivastava2016}, the scores are calculated based on the sample difficulty, which is proportional to the classification score of the true class, $f(x|\theta, y)$. For importance sampling methods, the scores are calculated based on the gradient norm for each sample, $|\frac{\partial{L(f(x_i|\theta), y_i)}}{\partial{x_i}}|$. We finish this section by briefly explaining the actual implementations of these approaches.
+Different authors have proposed a variety of current hypothesis methods. Specifically, in self-paced learning \cite{Kumar2010, Li2017, Meng2016}, active bias learning \cite{Chang2017}, and hard example mining \cite{Shrivastava2016, Loshchilov2015}, the scores are calculated based on the sample difficulty, which is proportional to the classification score of the true class, $f(x|\theta, y)$. For importance sampling methods, the scores are calculated based on the gradient norm for each sample, $|\frac{\partial{L(f(x_i|\theta), y_i)}}{\partial{x_i}}|$. We finish this section by briefly explaining the actual implementations of these approaches.
 
 \subsubsection{Difficulty Based Method}
 
@@ -46,15 +47,37 @@ where $v$ is the score calculated by the pace function. The pace function can be
 
 A potential problem of self-paced learning is that it would gradually increase the loss of hard examples \cite{Chang2017}. The possible solution is to use the active bias learning method, which is designed to select the uncertain samples whose classification score vary near the decision threshold. Chang et al. proposed and evaluated many self-paced methods and the representative one is called SGD Sampled by Threshold Closeness (SGD-STC) \cite{Chang2017}. It records the historical average classification probability $\bar{P}$ for each sample and the score is calculated with a equation that is proportional to $(1-\bar{P}) \times \bar{P}$. However, the problem is that we need extra space and computation to maintain the historical scores.
 
-Hard example mining is yet another heuristic method 
+Hard example mining is yet another heuristic method aims at maximising the convergence speed by extending the self-paced learning method \cite{Shrivastava2016}. The algorithm proposed by \cite{Loshchilov2015} ranks the samples based on the latest computed classification score in descending order. At early training stages, the algorithm chooses easy samples just like self-paced learning. After a thorough exploitation process, the algorithm tends to select hard examples which have low classification scores.
+
+
 
 \subsubsection{Importance Based Method}
+Although published experiments in the cited resources above prove that difficulty based methods can surely speed up the training process and may achieve even higher accuracy, the lack of mathematical prove could lower the interests of researchers. In the contrary, importance based method raises from the profound mathematical demonstration \cite{Zhao2015} and is more reliable. Despite the elaborate derivation, the most important conclusion is that the optimal weight distribution is proportional to the per sample gradient norm.
 
+The challenge is that computing the per sample gradient norm $|\frac{\partial{L(f(x_i|\theta), y_i)}}{\partial{x_i}}|$ is intractable. In the past few years, many researchers have adapted their approximate methods to speed up the process. The most convincing one is proposed by Katharopoulos et al. which derives an upper bound of the gradient norm \cite{Katharopoulos2018},
+
+\begin{equation}
+	|\frac{\partial{L(f(x_i|\theta), y_i)}}{\partial{x_i}}|  \leq |h(x_i)|\end{equation}
+that $h(x_i)$ is the upper bound function depends on the last layer pre-activation outputs and time step $t$. With this equation, we can compute the largest sample gradient after a single forward propagation.
+
+The benefits of current hypothesis methods is that the sample importance varies with time step thus the chosen samples at each step can reflect the current capacity of the network. However, because evaluating the whole training set is time-consuming, we often select a subset uniformly first and then select the samples within the subset. This would affect the optimal theory performance. 
 
 \subsection{Target Hypothesis Method}
+Compared with current hypothesis method, target hypothesis method selects instances based on the possible final performance of the network thus the weights of the samples are pre-defined and won't change during the training process \cite{Bengio2009}. For this reason, target hypothesis methods are more suitable to reduce the size of the dataset. To our knowledge, Curriculum Learning (CL) is the only method with these properties.
+
+Similar with hard example mining, CL trains the network with easy samples first then adds more difficult samples into the dataset and gradually the subset would contain all the training samples. The main difference is that the difficulties of the samples are measured in advance, whether with a pre-trained network or with a linear classifier like SVM \cite{Hacohen2019a}. 
+
+\section{Data Reduction Algorithm}
+Data reduction algorithm becomes famous with the increasing of dataset size and compute time. The most common one is called Principal Components Analysis (PCA) which projects the features onto the most important few eigenvectors to capture the most variants. The famous example eigenface proves that PCA is efficient even with image dataset \cite{Paul2012}. Apart from PCA, there are other methods such as dimensionality reduction methods which reduce the size of the sample features and instance selection methods that can reduce the number of samples in the training set. We discuss some typical implementations in the next subsections.
+
+\subsection{Dimensionality Reduction}
+As discussed above, PCA is the most common method for both structured dataset and unstructured dataset. In the context of deep CNN, however, the term feature extraction is more famous as discussed in section \ref{slcnn}. Kornblith et al. evaluated the extracted features with pre-trained networks on many vision datasets and the results show that the logistic regression accuracy is linearly related to the ImageNet classification accuracy \cite{Kornblith2018}. The problem is that   
 
 
-\section{Data Reduction Algorithms}
+
+\subsection{Instance Selection}
+
+
 
 \section{Trade-off Framework}
 
