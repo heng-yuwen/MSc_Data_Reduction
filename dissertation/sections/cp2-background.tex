@@ -1,4 +1,4 @@
-In this chapter, we begin with presenting the necessary background to understand the supervised learning and data reduction methods, as well as, other ideas required to understand our research method.  We we start with the structure of CNN and the training procedure. We then discuss the modern subset selection methods that can speed up the training procedure and outline their deficiencies. Next, we review the data reduction literature and present a CNN data reduction framework - use the network pre-trained on ImageNet to extract low-dimensional features and run the data reduction methods on extracted features. Furthermore, we cover the existing trade-off framework BlinkML \cite{Park2019a} in the context of maximum-likelihood estimation machine learning algorithms and explain why it is not suitable for deep neural network. Finally, we present TAPAS \cite{Istrate2019}, which is an accuracy predictor for deep neural network without training and has several properties that make it useful to build our trade-off framework.
+In this chapter, we begin with presenting the necessary background to understand the supervised learning and data reduction methods, as well as, other ideas required to understand our research method.  We start with the structure of CNN and the training procedure. We then discuss the modern subset selection methods that can speed up the training procedure and outline their deficiencies. Next, we review the data reduction literature and present a CNN data reduction framework - use the network pre-trained on ImageNet to extract low-dimensional features and run the data reduction methods on extracted features. Furthermore, we cover the existing trade-off framework BlinkML \cite{Park2019a} in the context of maximum-likelihood estimation machine learning algorithms and explain why it is not suitable for deep neural network. Finally, we present TAPAS \cite{Istrate2019}, which is an accuracy predictor for deep neural network without training and has several properties that make it useful to build our trade-off framework.
 
 \section{Supervised Learning with CNN}
 \label{slcnn}
@@ -70,15 +70,13 @@ Similar with hard example mining, CL trains the network with easy samples first 
 \section{Data Reduction Algorithm}
 Data reduction algorithm becomes famous with the increasing of dataset size and compute time. The most common one is called Principal Components Analysis (PCA) which projects the features onto the most important few eigenvectors to capture the most variants. The famous example eigenface proves that PCA is efficient even with image dataset \cite{Paul2012}. Apart from PCA, there are other methods such as dimensionality reduction methods which reduce the size of the sample features and instance selection methods that can reduce the number of samples in the training set. We discuss some typical implementations in the next subsections.
 
-\subsection{Dimensionality Reduction}
-As discussed above, PCA is the most common method for both structured dataset and unstructured dataset. In the context of deep CNN, however, the term feature extraction is more famous as discussed in section \ref{slcnn}. Kornblith et al. evaluated the extracted features with pre-trained networks on many vision datasets and the results show that the logistic regression accuracy is linearly related to the ImageNet classification accuracy \cite{Kornblith2018}. The problem is that   
+\subsection{Dimensionality Reduction Methods}
+As discussed above, PCA is the most common method for both structured dataset and unstructured dataset. In the context of deep CNN, however, the term feature extraction is more famous as discussed in section \ref{slcnn}. Kornblith et al. evaluated the extracted features with pre-trained networks on many vision datasets and the results show that the logistic regression accuracy is linearly related to the ImageNet classification accuracy \cite{Kornblith2018}. 
 
-
-
-\subsection{Instance Selection}
-
-
+\subsection{Instance Selection Methods}
+Most instance selection methods are designed to reduce the size of structured dataset for machine learning algorithms like SVM and logistic regression with the assumption that we can recover the decision boundary with fewer samples. According to the thorough review \cite{Olvera-Lopez2010}, the instance selection methods can be divided in to two categories: wrapper and filter. Wrapper methods select the subset samples based on the classification results. Often misclassified samples will be selected because they can contribute to the accuracy of classifier like k-NN \cite{Aha1991}. Filter methods tend to  select samples near the decision boundary because these samples can help the classifier to recover the original shape \cite{Riquelme2003a}. Although the wrapper methods could achieve higher accuracy because they are classifier dependent, they tend to cost too much compute time because they need to evaluate the accuracy multiple times. From this perspective, filter methods are more suitable for deep learning.
 
 \section{Trade-off Framework}
+
 
 \section{Accuracy Predictor}
