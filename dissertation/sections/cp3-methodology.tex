@@ -1,7 +1,9 @@
 In this chapter, we begin by presenting the pre-processing feature extraction process for image dataset. Next we adapt three methods overviewed in Chapter \ref{bg} to reduce the size of image dataset, called the Patterns by Ordered Projections (POP) \cite{Riquelme2003a}, Enhanced Global Density-based Instance Selection (EGDIS) \cite{Malhat2020}, and Curriculum Learning (CL) \cite{Hacohen2019a}. Then we propose our weighted data reduction method, called Weighted Curriculum Learning (WCL), based on CL scores and the EGDIS selected boundary instances. We also illustrate the selection patterns with three generated blob datasets, which correspond to the 2-dimensional special case of extracted image feature space. After that, our work is focused on the comprehensive evaluation of the methods. We describe image augmentation algorithms and the details of the DenseNet architecture \cite{Huang2017} and incremental training \cite{Istrate2017}. We also describe the model fitting procedure of the SVM-baseline.
 
+\section{Datasets}
+We choose to use CIFAR10 and CIFAR100 \cite{Krizhevsky2009} as our experimental datasets which contain 6000 and 600 tiny images of size 32$\times$32 per class respectively. The advantagy of CIFAR is that they are large in the number of images and small in the size of images. We could train the network in a shorter time and explore the reduction rate in a precise scale. The test set accuracies reported with NasNetLarge \cite{Zoph2018} in \cite{Kornblith2018} show that CIFAR10 is very easy to classify and CIFAR100 is as difficult as other high resolution datasets such as the Describable Textures Dataset (DTD) \cite{Cimpoi2014}, Food-101 \cite{Bossard2014}. By combining multiple classes samples selected from CIFAR100, we should be able to get new datasets with classification difficult harder than CIFAR10 but easier than CIFAR100. We could get more evaluation results with these synthesised datasets \cite{Istrate2019}.
+
 \section{Image Feature Extraction}
-We choose to use CIFAR10 and CIFAR100 to 
 
 \section{Patterns by Ordered Projections}
 
