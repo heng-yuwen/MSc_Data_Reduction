@@ -1,0 +1,3 @@
+"num_sub_samples", "num_full_samples", "retain_rate", "sub_val_1", "sub_val_2", "sub_val_3", "sub_val_4", "sub_val_5", "sub_val_6", "sub_val_7", "sub_val_8", "sub_val_9", "sub_val_10", "whole_val_1", "whole_val_2", "whole_val_3", "whole_val_4", "whole_val_5", "sub_acc", "full_acc", "relative_acc"
+
+336, 40000, 0.0084, 10.3, 15.12, 11.78, 16.54, 18.55, 16.8, 17.82, 22.59, 18.26, 22.4, 38.32, 60.17, 69.18, 72.07, 67.62, 25.28, 95.05, 0.2660
