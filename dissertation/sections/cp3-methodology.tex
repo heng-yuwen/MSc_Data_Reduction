@@ -12,8 +12,6 @@ We choose to use CIFAR10 and CIFAR100 \cite{Krizhevsky2009} as our experimental 
 
 After scaling up the image size to 331 and transforming the images into range 0 to 1 by dividing 255, we therefore performed the feature extraction task. The goal was to provide structural data for the data reduction algorithms to work with. We did this job with pre-trained NasNetLarge \cite{Zoph2018} because Kornblith et al. \cite{Kornblith2018} have evaluated the quality of extracted features and the quality of extracted features is good enough. Their experiments show that the classification scores with simple logistic regression are very close to the state-of-art classification scores with CNN. In order to simplify the implementation, we chose to use the Keras implemented NasNetLarge network from TensorFlow Hub, which is designed to get feature vectors from images \cite{tensorhub_nasnet}. However, the original shape of the feature vector is 4032 and it would take longer time to run the reduction algorithms. To speed up the reduction process, we trained another network with two FC layers. The depth of the first FC layer is 128 and we took the outputs as compressed feature vectors. The test accuracy is also reported as the baseline performance. Figure \ref{Fig.compress_layer} represents the network structure. We also trained a batch normalisation layer after the 128-D FC layer to limit the feature range. This ensured that the Euclidean distance between two vectors wouldn't be dominated by dimensions with wider range.
 
-Compressing the feature vectors saved a lot of disk space. 
-
 
  \begin{figure}[H]
  \centering
@@ -22,87 +20,10 @@ Compressing the feature vectors saved a lot of disk space.
  \label{Fig.compress_layer}
  \end{figure}
 
-% POP
-\section{Patterns by Ordered Projections}
-The POP algorithm is designed to select inner samples by projecting the samples onto each feature dimension.
+\section{Difficulty Tuneable Algorithms}
+Before presenting the evaluation plans, it should be noted that the algorithms described in \ref{ibalgorithm} are not perfect. POP and EGDIS are not deep learning based so the CNN may not work well with selected samples. Also, although CL is target hypothesis based algorithm, by keeping easy samples only may limit the performance that the network could achieve. Therefore, our first contribution is to modify these 
 
-\begin{algorithm}[H]
- \KwData{compressed 128-D feature vectors $M$}
- \KwIn{weakness threshold $wt$, equal tolerance $et$}
- \KwOut{selected sample index by POP}
- 
-
-$weakness = zeros(len(M))$ \;
-
-\ForEach{feature dimension $F_j = M[:,\ j]$} {
-	 $idx\_list = sort\_by\_value(F_j)$ \;
-	 $idx\_list = resort\_by\_label(F_j,\ et,\ idx\_list)$ \;
-	 
-	 \ForEach{idx in idx\_list} {
-	 	\If{M[idx, j] is not border}{
-	 		$weakness[idx] += 1$\;
-	 	}
-	 }
-}
-
-\Return $argwhere(weakness < wt)$ \;
-
-\caption{POP for continuous features}
-\end{algorithm}
-
-\section{Enhanced Global Density-based Instance Selection}
-EGDIS selects the boundary samples with the 3-NN algorithm and the samples at the densest area.
-
-% EGDIS
-
-\begin{algorithm}[H]
- \KwData{compressed 128-D feature vectors $M$}
- \KwIn{number of neighborhoods $k$}
- \KwOut{selected sample index by EGDIS}
-
-$boundary\_idx = []$ \;
-$densest\_idx = []$ \;
-$neighbour\_distance\_list, neighbour\_index\_list = kneighbours(M, k)$ \;
-\For{i in range(len(neighbour\_index\_list))} {
- 	neighbour\_index = neighbour\_index\_list[i, :] \;
-	irrelevance\_score = irrelevance(neighbour\_index) \;
-	\eIf{irrelevance\_score is greater or equal to floor(k/2)} {
-		boundary\_idx.append(k) \;
-	}{\If{density(M[i]) is larger than density(M[neighbour\_index])} 
-	{densest\_idx.append(i)}}
-}
-
-\Return $union1d(boundary\_idx, densest\_idx)$ \;
-
-\caption{EGDIS}
-\end{algorithm}
-
-
-\section{Curriculum Learning}
-We use extracted features from NasNetLarge to train a simple two FC layer network. The output score is recored and used to select samples in descending order.  
-
-% CL
-
-\begin{algorithm}[H]
- \KwData{compressed 128-D feature vectors $M$}
- \KwIn{number of samples to select $m$, classification score for each sample $scores$, number of classes $n$}
- \KwOut{selected sample index by CL}
-
-$selected\_idx\_list = []$ \;
-
-\ForEach{class label L}{
-	scores = all sample scores with label L \;
-	idx\_list = sort\_by\_value(scores) \;
-	selected\_idx\_list.append(idx\_list[: floor(m/n)]) \;
-}
-
-
-\Return $selected\_idx\_list$ \;
-
-\caption{CL}
-\end{algorithm}
-
-\section{Weighted Curriculum Learning}
+\subsection{Weighted Curriculum Learning}
 Instead of selecting the top N samples based on CL scores, we use the scores as the sample weights just like the importance based methods. In this way, not only the easy samples are selected, some hard examples are also selected. Because we only select the subset once, this behaviour should be able to achieve higher accuracy if the network is good enough. However, if the network is not capable of handling these hard examples, then the accuracy may decay.
 
 
@@ -128,29 +49,34 @@ $selected\_idx\_list = []$ \;
 \caption{WCL}
 \end{algorithm}
 
-\section{Boundary Based Weighted Curriculum Learning}
+\subsection{Boundary Based Weighted Curriculum Learning}
 We also evaluated its EGDIS based variants which takes a propotion of EGDIS boundary samples so that we would have a higher chance selecting them. We keep class balance as a basic rule so we select 20\%, 40\% boundary samples if possible.
 
 % BBWCL
 
 \begin{algorithm}[H]
  \KwData{compressed 128-D feature vectors $M$}
-  \KwIn{number of samples to select $m$, classification score for each sample $scores$, number of classes $n$}
- \KwOut{selected sample index by WCL}
+  \KwIn{number of samples to select $m$, classification score for each sample $scores$, number of classes $n$, EGDIS boundary sample index list $egdis\_boundary\_index$, percent of boundary to select $p$}
+ \KwOut{selected sample index by BWCL}
 
 $selected\_idx\_list = []$ \;
 
 \ForEach{class label L}{
-	scores = all sample scores with label L \;
+	scores = all non-EGDIS sample scores with label L \;
+	egdis\_boundary\_index\_L = all EGDIS boundary sample index with label L \;
+	egdis\_idx = choose floor(m/n $\times$ p) samples from egdis\_boundary\_index\_L \;
+	selected\_idx\_list.append(egdis\_idx)) \;
+	
 	scores = scores / sum(scores) \;
-	idx\_list = choose floor(m/n) samples based on scores \;
+	idx\_list = choose floor(m/n$\times$ (1-p))
+	 samples based on scores \;
 	selected\_idx\_list.append(idx\_list)) \;
 }
 
 
 \Return $selected\_idx\_list$ \;
 
-\caption{WCL}
+\caption{BWCL}
 \end{algorithm}
 
 

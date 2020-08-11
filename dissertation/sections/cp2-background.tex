@@ -52,6 +52,7 @@ Hard example mining is yet another heuristic method aims at maximising the conve
 
 
 \subsubsection{Importance Based Method}
+\label{ibalgorithm}
 Although published experiments in the cited resources above prove that difficulty based methods can surely speed up the training process and may achieve even higher accuracy, the lack of mathematical prove could lower the interests of researchers. In the contrary, importance based method raises from the profound mathematical demonstration \cite{Zhao2015} and is more reliable. Despite the elaborate derivation, the most important conclusion is that the optimal weight distribution is proportional to the per sample gradient norm.
 
 The challenge is that computing the per sample gradient norm $|\frac{\partial{L(f(x_i|\theta), y_i)}}{\partial{x_i}}|$ is intractable. In the past few years, many researchers have adapted their approximate methods to speed up the process. The most convincing one is proposed by Katharopoulos et al. which derives an upper bound of the gradient norm \cite{Katharopoulos2018},
@@ -67,6 +68,29 @@ Compared with current hypothesis method, target hypothesis method selects instan
 
 Similar with hard example mining, CL trains the network with easy samples first then adds more difficult samples into the dataset and gradually the subset would contain all the training samples. The main difference is that the difficulties of the samples are measured in advance, whether with a pre-trained network or with a linear classifier like SVM \cite{Hacohen2019a}. 
 
+We use extracted features from NasNetLarge to train a simple two FC layer network. The output score is recored and used to select samples in descending order.  
+
+% CL
+
+\begin{algorithm}[H]
+ \KwData{compressed 128-D feature vectors $M$}
+ \KwIn{number of samples to select $m$, classification score for each sample $scores$, number of classes $n$}
+ \KwOut{selected sample index by CL}
+
+$selected\_idx\_list = []$ \;
+
+\ForEach{class label L}{
+	scores = all sample scores with label L \;
+	idx\_list = sort\_by\_value(scores) \;
+	selected\_idx\_list.append(idx\_list[: floor(m/n)]) \;
+}
+
+
+\Return $selected\_idx\_list$ \;
+
+\caption{CL}
+\end{algorithm}
+
 \section{Data Reduction Algorithm}
 Data reduction algorithm becomes famous with the increasing of dataset size and compute time. The most common one is called Principal Components Analysis (PCA) which projects the features onto the most important few eigenvectors to capture the most variants. The famous example eigenface proves that PCA is efficient even with image dataset \cite{Paul2012}. Apart from PCA, there are other methods such as dimensionality reduction methods which reduce the size of the sample features and instance selection methods that can reduce the number of samples in the training set. We discuss some typical implementations in the next subsections.
 
@@ -75,6 +99,62 @@ As discussed above, PCA is the most common method for both structured dataset an
 
 \subsection{Instance Selection Methods}
 Most instance selection methods are designed to reduce the size of structured dataset for machine learning algorithms like SVM and logistic regression with the assumption that we can recover the decision boundary with fewer samples. According to the thorough review \cite{Olvera-Lopez2010}, the instance selection methods can be divided in to two categories: wrapper and filter. Wrapper methods select the subset samples based on the classification results. Often misclassified samples will be selected because they can contribute to the accuracy of classifier like k-NN \cite{Aha1991}. Filter methods tend to  select samples near the decision boundary because these samples can help the classifier to recover the original shape \cite{Riquelme2003a}. Although the wrapper methods could achieve higher accuracy because they are classifier dependent, they tend to cost too much compute time because they need to evaluate the accuracy multiple times. From this perspective, filter methods are more suitable for deep learning.
+
+% POP
+The POP algorithm is designed to select inner samples by projecting the samples onto each feature dimension.
+
+\begin{algorithm}[H]
+ \KwData{compressed 128-D feature vectors $M$}
+ \KwIn{weakness threshold $wt$, equal tolerance $et$}
+ \KwOut{selected sample index by POP}
+ 
+
+$weakness = zeros(len(M))$ \;
+
+\ForEach{feature dimension $F_j = M[:,\ j]$} {
+	 $idx\_list = sort\_by\_value(F_j)$ \;
+	 $idx\_list = resort\_by\_label(F_j,\ et,\ idx\_list)$ \;
+	 
+	 \ForEach{idx in idx\_list} {
+	 	\If{M[idx, j] is not border}{
+	 		$weakness[idx] += 1$\;
+	 	}
+	 }
+}
+
+\Return $argwhere(weakness < wt)$ \;
+
+\caption{POP for continuous features}
+\end{algorithm}
+
+EGDIS selects the boundary samples with the 3-NN algorithm and the samples at the densest area.
+
+% EGDIS
+
+\begin{algorithm}[H]
+ \KwData{compressed 128-D feature vectors $M$}
+ \KwIn{number of neighborhoods $k$}
+ \KwOut{selected sample index by EGDIS}
+
+$boundary\_idx = []$ \;
+$densest\_idx = []$ \;
+$neighbour\_distance\_list, neighbour\_index\_list = kneighbours(M, k)$ \;
+\For{i in range(len(neighbour\_index\_list))} {
+ 	neighbour\_index = neighbour\_index\_list[i, :] \;
+	irrelevance\_score = irrelevance(neighbour\_index) \;
+	\eIf{irrelevance\_score is greater or equal to floor(k/2)} {
+		boundary\_idx.append(k) \;
+	}{\If{density(M[i]) is larger than density(M[neighbour\_index])} 
+	{densest\_idx.append(i)}}
+}
+
+\Return $union1d(boundary\_idx, densest\_idx)$ \;
+
+\caption{EGDIS}
+\end{algorithm}
+
+
+
 
 \section{Trade-off Framework}
 
