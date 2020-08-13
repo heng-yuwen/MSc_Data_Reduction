@@ -25,6 +25,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subfigure}
+\usepackage[toc,title,page]{appendix}
 \usepackage[ruled,linesnumbered]{algorithm2e}
 
 \begin{document}
@@ -72,16 +73,18 @@ Finally, I would like to send my love to my fiancee Danni Li for her accompany d
 \chapter{Conclusion and Future Work}
 \subfile{sections/conclusion}
 
+
 \bibliographystyle{plain}
 \bibliography{library.bib}
 
 
+
 %% You can include appendices like this:
-% \appendix
-% 
-% \chapter{First appendix}
-% 
-% \section{First section}
+ \appendix
+ 
+ \chapter{Training History}
+ \subfile{sections/appendix}
+
 % 
 % Markers do not have to consider appendices. Make sure that your contributions
 % are made clear in the main body of the dissertation (within the page limit).

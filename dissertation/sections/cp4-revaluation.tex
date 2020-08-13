@@ -1,5 +1,10 @@
 \section{Experiment 1: Feature Extraction}
-In this section we extract the features for CIFAR10 and CIFAR100 with the method described in Section 3. With early stop method, the final test accuracy of CIFAR10 is 0.9241, for CIFAR100 the accuracy is 0.7266. The training history is shown in appendix.
+The python version CIFAR10 and CIFAR100 datasets are downloaded from the official website with pre-defined train and test sets. The train set were split into train and validation sets with the ratio 8:2 randomly. We got 40,000 train samples, 10,000 validation samples and 10,000 test samples for both datasets. In order to speed up the experiments, we started by extracting the image feature vectors with a single forward propagation before training the FC layers.
+
+All trainable parameters of the two FC layers were initialised by the Xavier uniform method \cite{Glorot2010}. The training process was monitored by the validation accuracy. After each epoch, we reported the validation accuracy and kept a record of the model parameters which achieved the best validation accuracy so far. We scheduled two training stages to approach the optimal classification accuracy. First we performed 500 training epochs with step size 0.01 then decreased it to 0.001 for another 500 epochs.  After each training stage, the recorded parameters were loaded to prevent overfitting. The final held-out test set accuracy for CIFAR10 is 0.9258 and for CIFAR100 is 0.7444. Finally we compressed the extracted 4032-D feature vectors with the 128-D FC layer.
+
+We further took a closer look at the compressed features by projecting them down to two dimensional vectors with t-SNE \cite{Maaten2008} and maintains the relative distance between samples. The plots are shown in Figure \ref{Fig.tsne}. Different colours represent different classes of samples. First of all, the network transformed the images into blobs where ideally samples from the same class should be closer to each other. This is true especially for CIFAR10. The quality of these compact blobs reflects the classification accuracy. Strays far from the cluster would be misclassified by the logistic regression layer thus lower the classification accuracy. Furthermore, the boundaries between different classes are not always clear. Blobs are close to each other near the boundary thus the classification accuracy is sensitive to slight variations of the boundary. The effect is more obvious if there are more samples for each class. This partly explains the rapid vibration of the CIFAR10 validation accuracy curve shown in Figure \ref{Fig.extracthis.a1}. In fact, we can widen the distance between adjacent blobs by fine-tuning the pre-trained feature extraction network and achieve a higher classification score \cite{Kornblith2018}. However, since we want to minimise the pre-processing time required, we omitted this step and stayed with the sub-optimal features.
+
 
 \begin{figure}[H]
 \centering  
@@ -9,8 +14,32 @@ In this section we extract the features for CIFAR10 and CIFAR100 with the method
 \subfigure[CIFAR100]{
 \label{Fig.sub.a2}
 \includegraphics[width=0.45\textwidth]{src/cifar100-tsne.png}}
-\caption{Extracted features visualisation with t-SNE algorithm}
+\caption{Visualisation of extracted features with the t-SNE algorithm.}
 \label{Fig.tsne}
+\end{figure}
+
+In addition, we compared the training process of the two datasets in Figure \ref{Fig.extracthis}. Across the two training stages, CIFAR10 converges faster than CIFAR100 but it starts to overfit earlier. The green line indicates that we could reduce the number of epochs in the first training stage by half and leave the mining job at the second  stage. 
+
+Finally, we also visualised the classification distributions in Figure \ref{Fig.clscores}. As observed from the quality of blobs plotted in Figure \ref{Fig.tsne}, CIFAR10 samples tend to achieve higher classification scores around 0.9 while CIFAR100 samples are spread across the range below score 0.9. Samples from CIFAR100 are harder to classify correctly with lower scores. Based on the sample selection procedures described in Chapter \ref{bg}, we may need more samples for CIFAR100 to achieve a similar relative accuracy compared with CIFAR10. This suggests that data reduction algorithms may be less efficient for datasets with more classes and lower classification accuracy. We will discuss the algorithm performance further in Section \ref{lr} and \ref{CNN}. 
+
+\begin{figure}[H]
+\centering  
+\subfigure[CIFAR10]{
+\label{Fig.extracthis.a1}
+\includegraphics[width=0.45\textwidth]{src/cifar10_exp1_train.png}}
+\subfigure[CIFAR10]{
+\label{Fig.sub.a2}
+\includegraphics[width=0.45\textwidth]{src/cifar10_exp1_train1.png}}
+
+\subfigure[CIFAR100]{
+\label{Fig.sub.a1}
+\includegraphics[width=0.45\textwidth]{src/cifar100_exp1_train.png}}
+\subfigure[CIFAR100]{
+\label{Fig.sub.a2}
+\includegraphics[width=0.45\textwidth]{src/cifar100_exp1_train1.png}}
+
+\caption{The training history of CIFAR10 and CIFAR100. The left column is the first 500 epochs and the right column is the second 500 columns. The green line represents the best validation epoch.}
+\label{Fig.extracthis}
 \end{figure}
 
 \begin{figure}[H]
@@ -21,16 +50,18 @@ In this section we extract the features for CIFAR10 and CIFAR100 with the method
 \subfigure[CIFAR100]{
 \label{Fig.sub.a2}
 \includegraphics[width=0.45\textwidth]{src/cl_score_cifar100.png}}
-\caption{Score distribution}
+\caption{Score distributions}
 \label{Fig.clscores}
 \end{figure}
 
+
+
+
+
 \section{Experiment 2: Intrinsic Behaviour}
-In this section, we use CIFAR10 to show the intrinsic behaviour of each data reduction algorithm described in Section 3. First we visualise the compressed cifar10 training features with the t-SNE algorithm, which projects the features down to 2 dimensional and maintains the relative distance between samples.
+In this section, we use CIFAR10 to show the intrinsic behaviour of each data reduction algorithm for the reason that the quality of t-SNE projected blobs are better than CIFAR100 thus we can visualise the selection preference easily. 
 
-\subsection{Tuneable Parameters and Sample Preference}
-For POP, we can tune the difference tolerance. For EGDIS, we can tune the k of the k-NN classifier. For CL, we can tune the number of samples selected. For WCL, we can tune the difficulty sample portion.
-
+For POP, we can tune the difference tolerance.   
 \begin{figure}[H]
 \centering  
 \subfigure[T=1, 8701 samples]{
@@ -46,12 +77,13 @@ For POP, we can tune the difference tolerance. For EGDIS, we can tune the k of t
 \label{Fig.popcifar10}
 \end{figure}
 
+For EGDIS, we can tune the k of the k-NN classifier.
 \begin{figure}[H]
 \centering  
-\subfigure[k=7, 3313 samples]{
+\subfigure[k=7, 2799 samples]{
 \label{Fig.sub.a1}
 \includegraphics[width=0.32\textwidth]{src/egdis-cifar10-8.png}}
-\subfigure[k=5, 4034 samples]{
+\subfigure[k=5, 3483 samples]{
 \label{Fig.sub.a2}
 \includegraphics[width=0.32\textwidth]{src/egdis-cifar10-6.png}}
 \subfigure[k=3, 5966 samples]{
@@ -62,7 +94,7 @@ For POP, we can tune the difference tolerance. For EGDIS, we can tune the k of t
 \end{figure}
 
 
-
+For CL, we can tune the number of samples selected.
 
 \begin{figure}[H]
 \centering  
@@ -78,6 +110,7 @@ For POP, we can tune the difference tolerance. For EGDIS, we can tune the k of t
 \caption{CL tune selection percentage}
 \label{Fig.clcifar10}
 \end{figure}
+For WCL, we can tune the difficulty sample portion.
 
 WCL which takes the sample within each class based on the sample score. Although most samples are selected from the high score region, there are some sample selected from the low score region. The problem is that for relatively easy dataset like CIFAR10, the behaviour is close to random selection because most samples have a score higher than 0.8. The score distribution is shown below.
 
@@ -123,6 +156,7 @@ In theory, POP tends to select pure boundary samples. EGDIS tends to select samp
 
 
 \section{Experiment 3: Logistic Regression}
+\label{lr}
 We choose 40 and 20 as the number of our extra synthesised datasets, with LR accuracy: 0.78925, 0.853. By fine-tuning the selected subsets, the test accuracy is: 0.8065, 0.8745.
 
  \begin{figure}[H]
@@ -153,19 +187,20 @@ We choose 40 and 20 as the number of our extra synthesised datasets, with LR acc
 Even for POP with threshold 1, the number of pure inner is still low. Therefore, it is not good to choose samples with weakness < 128. We fix the number and choose CIFAR samples. From our experiment, we found that the relative accuracy acquired from EGDIS is good enough. Therefore, we make POP to select the same amount of samples as EGDIS, by ranking POP samples based on weakness, to compare their performance.
  
  
- \begin{table}[H]
+\begin{table}
     \centering
     \begin{tabular}{|l|l|l|l|l|l|l|}
     \hline
-        Datasets & NONE & POP & EGDIS & CL & WCL & BWCL \\ \hline
-        CIFAR10 & 0.9258 & 0.9258 & \textbf{0.9262} & 0.9234 & 0.9254 & 0.9250 \\ \hline
-        CIFAR20 & 0.8825 & \textbf{0.8820} & 0.8738 & 0.8787 & 0.8764 & 0.8775 \\ \hline
-        CIFAR40 & 0.8159 & \textbf{0.8130} & 0.8071 & 0.8085 & 0.8115 & 0.8129 \\ \hline
-        CIFAR100 & 0.7444 & 0.7398 & 0.7279 & 0.7353 & 0.7404 & \textbf{0.7406} \\ \hline
+        Datasets & Retention Rate  & POP & EGDIS & CL & WCL & BWCL \\ \hline
+        CIFAR10 & 14.915\% & 100.00\% & \textbf{100.04}\% & 99.74\% & 99.96\% & 99.91\% \\ \hline
+        CIFAR20 & 16.67\% & \textbf{99.94}\% & 99.01\% & 99.57\% & 99.31\% & 99.43\% \\ \hline
+        CIFAR40 & 21.09\% & \textbf{99.64}\% & 98.92\% & 99.09\% & 99.46\% & 99.63\% \\ \hline
+        CIFAR100 & 31.48\% & 99.38\% & 97.78\% & 98.78\% & 99.46\% & \textbf{99.49}\% \\ \hline
     \end{tabular}
-    \caption{Logistic Regression test set accuracy by averaging 12 runs}
-    \label{lgtestacc}
+    \caption{Logistic Regression test set relative accuracy by averaging 12 runs}
+    \label{132e3213}
 \end{table}
+
 
 \begin{figure}[H]
 \centering  
@@ -184,26 +219,39 @@ However, this is not a solid conclusion because the quality of the extracted fea
 \begin{figure}[H]
  \centering
  \includegraphics[width=0.8\textwidth]{src/bwcl_relative_size04.png}
- \caption{The test set accuracies of CIFAR100 subsets. Horizontal axis is the number of classes selected. Vertical axis is the accuracy score. For each selection, we randomly choose the classes for five times and report the accuracy with logistic regression model.}
+ \caption{The BWCL test set accuracies. Averaged with 3 individual runs. The threshold is 10\%. Horizontal axis is the percentage of samples selected, in term of EDGIS selected samples. Vertical axis is the accuracy score.}
  \label{Fig.logistic_subsets}
  \end{figure}
 
-\subsection{Experiment 4: Data Reduction for CNN}
+\section{Experiment 4: Data Reduction for CNN}
+\label{CNN}
 We train the network densenet101, three times, with learning rate 0.1 (150 epochs), 0.01 (100 epochs) and 0.001 (100 epochs)
 
 \begin{table}[H]
     \centering
-    \begin{tabular}{|l|l|l|l|l|l|l|l|}
+    \begin{tabular}{|l|l|l|l|l|l|l|}
     \hline
-        Datasets & Retention Rate  & NONE & POP & EGDIS & CL & WCL & BWCL \\ \hline
-        CIFAR10 & 14.915\% & 95.22 & 82.65 & 81.11 & 82.57 & 84.14 & 81.28 \\ \hline
-        CIFAR20 & 16.67\% & 86.6 & 51.9 & 53.2 & 61.45 & 60.05 & 53.1 \\ \hline
-        CIFAR40 & 21.09\% & 81.59 & 52.675 & 52.6 & 62.375 & 58.75 & 56.0 \\ \hline
-        CIFAR100 & 31.48\% & 78.42 & 59.0 & 57.83 & 64.87 & 65.27 & 64.5 \\ \hline
+        Datasets & Retention Rate  & POP & EGDIS & CL & WCL & BWCL \\ \hline
+        CIFAR10 & 14.915\% & 86.80\% & 85.18\% & 86.71\% &\textbf{88.36}\% & 86.75\% \\ \hline
+        CIFAR20 & 16.67\% & 59.93\% & 61.43\% & \textbf{70.96}\% & 69.34\% & 64.67\% \\ \hline
+        CIFAR40 & 21.09\% & 63.99\% & 63.89\% & \textbf{75.77}\% & 71.36\% & 70.65\% \\ \hline
+        CIFAR100 & 31.48\% & 75.24\% & 73.74\% & 82.72\% & \textbf{83.23}\% & 81.69\% \\ \hline
     \end{tabular}
-    \caption{12312312}
+    \caption{CNN test set relative accuracy}
     \label{132e3213}
 \end{table}
+
+\begin{figure}[H]
+\centering  
+\subfigure[Relative Accuracy]{
+\label{Fig.sub.a1}
+\includegraphics[width=0.45\textwidth]{src/cnn-alg-relative.png}}
+\subfigure[Relative Accuracy of BWCL by tuning maximum boundary proportion]{
+\label{Fig.sub.a2}
+\includegraphics[width=0.45\textwidth]{src/cnn-bwcl-relative.png}}
+\caption{Relative Accuracy of data reduction algorithms}
+\label{Fig.logistic_relativeacc}
+\end{figure}
 
 
 \begin{figure}[H]

@@ -21,10 +21,19 @@ After scaling up the image size to 331 and transforming the images into range 0 
  \end{figure}
 
 \section{Difficulty Tuneable Algorithms}
-Before presenting the evaluation plans, it should be noted that the algorithms described in \ref{ibalgorithm} are not perfect. POP and EGDIS are not deep learning based so the CNN may not work well with selected samples. Also, although CL is target hypothesis based algorithm, by keeping easy samples only may limit the performance that the network could achieve. Therefore, our first contribution is to modify these 
+Before presenting the evaluation plans, it should be noted that the algorithms described in \ref{ibalgorithm} are not perfect. First of all, POP and EGDIS are not deep learning based algorithms so the CNN may not work well with selected samples. Also, although CL is target hypothesis based algorithm, by keeping easy samples only may limit the highest performance that the network could achieve. Therefore, our first contribution is to enhance CL with the ability to contain a tuneable proportion of relatively difficult samples. We proposed two variations:
+
+\begin{enumerate}
+\item Weighted Curriculum Learning, which select samples according to classification scores.
+\item Boundary Enhanced Weighted Curriculum Learning, which selects a proportion of the EGDIS boundary samples first then fill in the subset with easier samples.
+\end{enumerate}
+
+We followed the requirement in \cite{Hacohen2019a} to select balanced subsets.
 
 \subsection{Weighted Curriculum Learning}
-Instead of selecting the top N samples based on CL scores, we use the scores as the sample weights just like the importance based methods. In this way, not only the easy samples are selected, some hard examples are also selected. Because we only select the subset once, this behaviour should be able to achieve higher accuracy if the network is good enough. However, if the network is not capable of handling these hard examples, then the accuracy may decay.
+Instead of selecting the top N samples after sorting the samples in ascending order based on classification scores, we normalised the scores as the survival probability. By dividing the sample score to the sum of all scores, the sum of all normalised scores will be 1 so that we can tread them as probability. In this way, sample with higher classification score would have higher probability to be selected. Therefore, not only the easy samples are selected, some hard examples are also selected. Because we only select the subset once, this behaviour should be able to achieve higher accuracy if the dataset is harder to classify and the network is powerful to learn from these hard examples. However, if the network is not capable of handling these hard examples, then the test accuracy may decay.
+
+
 
 
 % WCL
@@ -50,7 +59,7 @@ $selected\_idx\_list = []$ \;
 \end{algorithm}
 
 \subsection{Boundary Based Weighted Curriculum Learning}
-We also evaluated its EGDIS based variants which takes a propotion of EGDIS boundary samples so that we would have a higher chance selecting them. We keep class balance as a basic rule so we select 20\%, 40\% boundary samples if possible.
+While WCL can reflect the difficulty of the datasets, it cannot guarantee to select enough hard examples for the network to mine the pattern. Therefore, we proposed the Boundary Based Weighted Curriculum Learning method to tune the amount of difficult samples in the selected subsets.
 
 % BBWCL
 
@@ -81,7 +90,12 @@ $selected\_idx\_list = []$ \;
 
 
 \section{Evaluation Designs}
-We have the following few experiments:
-1. We use generated dataset to explore the intrinsic behaviour of these methods.
-2. We use logistic regression to test all these methods. We also use the experiment results to decide how to select the subsets and the percentage range.
-3. We select 3 subsets based on the test result of exp1, to run deep learning using incremental method. In total, we have experiment 9 network results on 5 datasets. We compare the experiment results and conclude the experiments.
+We have the following few experiments to evaluate the performance of the chosen three and the two proposed algorithms:
+
+\begin{enumerate}
+\item We extracted the feature vectors for CIFAR10 and CIFAR100. We visualised the extracted features with t-SNE.
+\item We use CIFAR10 to explore the intrinsic behaviour of these methods. We reported the extraction time for both CIFAR10 and CIFAR100.
+\item We use logistic regression to test all five methods. We also use the experiment results to decide how to select the CIFAR subsets.
+\item We used these four datasets to evaluate them CNN, DenseNet121.
+\end{enumerate}
+
