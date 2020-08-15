@@ -300,7 +300,7 @@ We took a further analysis for BWCL, by varying the proportion of samples select
 
 \section{Experiment 4: Data Reduction for CNN}
 \label{CNN}
-We train the network densenet101, three times, with learning rate 0.1 (150 epochs), 0.01 (100 epochs) and 0.001 (100 epochs)
+We trained the network densenet101, three times, with learning rate 0.1 (150 epochs), 0.01 (100 epochs) and 0.001 (100 epochs). First we trained the network with the same selection configuration as logistic regression and reported the classification accuracy in Table \ref{CNN_accs}. 
 
 \begin{table}[H]
     \centering
@@ -313,8 +313,10 @@ We train the network densenet101, three times, with learning rate 0.1 (150 epoch
         CIFAR100 & 31.48\% & 75.24\% & 73.74\% & 82.72\% & \textbf{83.23}\% & 81.69\% \\ \hline
     \end{tabular}
     \caption{CNN test set relative accuracy}
-    \label{132e3213}
+    \label{CNN_accs}
 \end{table}
+
+First of all, we found that POP and EGDIS selected samples are not suitable for neural network. The network cannot extract good features from these images thus the relative accuracy is much lower than expected. Second, classification score based algorithms can achieve relatively higher accuracy. In particular, for datasets with less per-class samples, CL is better. For datasets with more per-class samples, WCL is better. However, BWCL performs worse  than expected. We believe that this is because we evaluated the classification scores with NasNetLarge, who has better extraction power than DenseNet. We just contains too much hard examples so the network cannot handle the training samples well. We proposed another hypothesis that if the network could learn these hard samples well, then it should be able to achieve higher classification accuracy based on the hard-example mining method described before. 
 
 \begin{figure}[H]
 \centering  
@@ -328,6 +330,7 @@ We train the network densenet101, three times, with learning rate 0.1 (150 epoch
 \label{Fig.logistic_relativeacc}
 \end{figure}
 
+We took a closer look at the training curve of the first training stage to analysis the convergence speed. For all datasets, CL selected samples can help the network to converge faster. 
 
 \begin{figure}[H]
 \centering  
