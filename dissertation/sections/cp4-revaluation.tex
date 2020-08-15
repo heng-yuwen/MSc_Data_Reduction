@@ -59,85 +59,131 @@ Finally, we also visualised the classification distributions in Figure \ref{Fig.
 
 
 \section{Experiment 2: Intrinsic Behaviour}
-Obtaining the  with  In this section, we use CIFAR10 to show the intrinsic behaviour of each data reduction algorithm for the reason that the quality of t-SNE projected blobs are better than CIFAR100 thus we can visualise the selection preference easily. 
+Obtaining the discriminative t-SNE plots, we assumed the FC layers to have learnt high quality compressed features. In this experiment, we tried to get an understanding of the intrinsic behaviours of these data reduction algorithms by visualising the selected CIFAR10 samples with red points. We managed to explain the behaviours with the answers to two questions: 
+\begin{enumerate}
+	\item What are the geometrical distributions of the selected samples?
+	\item What are the classification score distributions of the selected samples?
+\end{enumerate}
 
-For POP, we can tune the difference tolerance.   
-\begin{figure}[H]
+For each algorithm, the selection behaviours were further explored by tuning the hyper-parameters. We chose to use CIFAR10 for the reason that the quality of t-SNE projected blobs are more discriminative than CIFAR100 thus we can understand the behaviours easily. 
+
+% POP
+First of all, we present the POP selected  vsamples by adjusting the equal tolerance of the $resort\_by\_label$ function described in Algorithm \ref{pop_psudo}. For each  tolerance choice, we removed only pure inner samples whose weakness values are 128. Figure \ref{Fig.popcifar10} depicts that with proper threshold setting such as $et = 1$, we can select most samples along the blob contours as desired. Also, from Figure \ref{Fig.popcifar10.a1} and \ref{Fig.popcifar10.a2}, we observe a trend to select samples closer to the boundary between two adjacent blobs rather than cover the whole contours. This behaviour can guide linear classifiers to build the proper decision boundaries. Another advantage of POP is the fast compute speed. It took us 33.27 seconds on average to get the result. However, POP was designed to process integer features. It is difficult to choose the suitable tolerance value and keep just enough samples. Our experiments indicate that the number of samples far from the boundary decreases much faster than expected by increasing the tolerance value. One possible reason is that we normalised the compressed features so the value range is too compact. This makes POP hard to use for image datasets. 
+   
+\begin{figure}
 \centering  
-\subfigure[T=1, 8701 samples]{
-\label{Fig.sub.a1}
+\subfigure{
+\label{Fig.popcifar10.a1}
 \includegraphics[width=0.32\textwidth]{src/pop-cifar10-1.png}}
-\subfigure[T=0.5, 14111 samples]{
-\label{Fig.sub.a2}
+\subfigure{
+\label{Fig.popcifar10.a2}
 \includegraphics[width=0.32\textwidth]{src/pop-cifar10-5.png}}
-\subfigure[T=0.1, 31966 samples]{
+\subfigure{
 \label{Fig.sub.a1}
 \includegraphics[width=0.32\textwidth]{src/pop-cifar10-01.png}}
+
+\setcounter{subfigure}{0}
+\subfigure[T=1, 8701 samples, 33.3s]{
+\label{Fig.popcifar10.a1}
+\includegraphics[width=0.32\textwidth]{src/pop-cifar10-dis-1.png}}
+\subfigure[T=0.5, 14111 samples, 29.7s]{
+\label{Fig.popcifar10.a2}
+\includegraphics[width=0.32\textwidth]{src/pop-cifar10-dis-05.png}}
+\subfigure[T=0.1, 31966 samples, 36.8s]{
+\label{Fig.popcifar10.a3}
+\includegraphics[width=0.32\textwidth]{src/pop-cifar10-dis-01.png}}
 \caption{POP tune threshold}
 \label{Fig.popcifar10}
 \end{figure}
 
-For EGDIS, we can tune the k of the k-NN classifier.
+The second algorithm we explored is EGDIS by tuning the hyper-parameter $k$ of the $knn$ classifier. Figure \ref{Fig.egdiscifar10} presents how the selection pattern varies with $k$ values 3, 5, and 7. Our first discovery is that EGDIS tends to select all misclassified samples together with samples surrounding them. Compared with Figure \ref{Fig.tsne2}, only a few samples still exist with different colours. Also, by increasing the value of $k$, fewer inner samples and boundary are selected. To explain these results, we need to know how EGDIS works with hyper-parameter $k$. In short, higher $k$ values require boundary samples to have more neighbours from different classes. Based on this mechanism, we can infer that most misplaced samples are alone and surrounded by correctly classified samples. For these isolated samples, they would be considered as boundary samples and have enough number of neighbours to be selected. For samples near the boundary, fewer samples will be qualified and only those closely contacted with other blobs would be selected. For dense samples near isolated misplaced points, some of them may be categorised as boundary samples and wouldn't be selected anymore.
+
+
 \begin{figure}[H]
 \centering  
-\subfigure[k=7, 2799 samples]{
+\subfigure{
 \label{Fig.sub.a1}
 \includegraphics[width=0.32\textwidth]{src/egdis-cifar10-8.png}}
-\subfigure[k=5, 3483 samples]{
+\subfigure{
 \label{Fig.sub.a2}
 \includegraphics[width=0.32\textwidth]{src/egdis-cifar10-6.png}}
-\subfigure[k=3, 5966 samples]{
+\subfigure{
 \label{Fig.sub.a1}
 \includegraphics[width=0.32\textwidth]{src/egdis-cifar10-4.png}}
+
+\setcounter{subfigure}{0}
+\subfigure[k=7, 2799 samples, 14min 27s]{
+\label{Fig.egdiscifar10x.a1}
+\includegraphics[width=0.32\textwidth]{src/egdis-cifar10-dis-7.png}}
+\subfigure[k=5, 3483 samples, 15min 7s]{
+\label{Fig.egdiscifar10.a2}
+\includegraphics[width=0.32\textwidth]{src/egdis-cifar10-dis-5.png}}
+\subfigure[k=3, 5966 samples, 14min 56s]{
+\label{Fig.egdiscifar10.a3}
+\includegraphics[width=0.32\textwidth]{src/egdis-cifar10-dis-3.png}}
 \caption{EGDIS tune kNN}
 \label{Fig.egdiscifar10}
 \end{figure}
 
-
-For CL, we can tune the number of samples selected.
-
-\begin{figure}[H]
-\centering  
-\subfigure[P=10\%, 4000 samples]{
-\label{Fig.sub.a1}
-\includegraphics[width=0.32\textwidth]{src/cl-cifar10-1.png}}
-\subfigure[P=30\%, 12000 samples]{
-\label{Fig.sub.a2}
-\includegraphics[width=0.32\textwidth]{src/cl-cifar10-3.png}}
-\subfigure[P=50\%, 20000 samples]{
-\label{Fig.sub.a1}
-\includegraphics[width=0.32\textwidth]{src/cl-cifar10-5.png}}
-\caption{CL tune selection percentage}
-\label{Fig.clcifar10}
-\end{figure}
-For WCL, we can tune the difficulty sample portion.
-
-WCL which takes the sample within each class based on the sample score. Although most samples are selected from the high score region, there are some sample selected from the low score region. The problem is that for relatively easy dataset like CIFAR10, the behaviour is close to random selection because most samples have a score higher than 0.8. The score distribution is shown below.
+The drawback of EGDIS is the global density calculation which computes the distance between all training samples. In our experiments, it took us on average 14 minutes 50 seconds to get all the selected samples and we only need about 12 seconds to select the boundary samples. Figure \ref{Fig.egdisboscores} shows the score distribution of EDGIS selected boundary samples with $k=3$. Compared with the second column of Figure \ref{Fig.egdiscifar10.a3}, the main difference is the lack of high score samples. Therefore, if we choose to select higher score samples from the score list, we can combine them with EGDIS selected boundary samples and get a similar EGDIS score distribution within about 20 seconds. We will mention this topic in the next few paragraphs.
 
 \begin{figure}[H]
 \centering  
-\subfigure[CIFAR10]{
+\subfigure[Scores]{
 \label{Fig.sub.a1}
 \includegraphics[width=0.45\textwidth]{src/boundarydis-cifar10-dis.png}}
-\subfigure[CIFAR100]{
+\subfigure[Plots]{
 \label{Fig.sub.a2}
-\includegraphics[width=0.45\textwidth]{src/boundarydis-cifar100-dis.png}}
+\includegraphics[width=0.45\textwidth]{src/egdis-boundary-cifar10.png}}
 \caption{EGDIS boundary score distribution}
 \label{Fig.egdisboscores}
 \end{figure}
 
+Next, we visualised the selection preference of CL in Figure \ref{Fig.clcifar10}. We selected different percentages of samples and the selection pattern is very obvious. We can see that CL tends to select only high score samples, and these samples are lying in the opposite direction as the EGDIS boundary samples. This is what we expected because samples far from the decision boundary would have high scores if the classifier.  From the score distributions, we can see that all selected samples are easy to classify for deep learning. This reminds us to combine these high score samples with EGDIS boundary samples. We can construct a limit of the blobs. However, the downside is that no inner samples are selected and the limit borders are not complete. We can not capture the whole shape of the blobs and the results are more like two isolated blobs for each class. With linear regression model, the boundary cannot be recovered precisely thus we may get lower accuracy.
+
 \begin{figure}[H]
 \centering  
+\subfigure{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/cl-cifar10-1.png}}
+\subfigure{
+\label{Fig.sub.a2}
+\includegraphics[width=0.32\textwidth]{src/cl-cifar10-3.png}}
+\subfigure{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/cl-cifar10-5.png}}
+
+\setcounter{subfigure}{0}
 \subfigure[P=10\%, 4000 samples]{
 \label{Fig.sub.a1}
-\includegraphics[width=0.32\textwidth]{src/wcl-cifar10-1.png}}
+\includegraphics[width=0.32\textwidth]{src/cl-cifar10-1-scoredis.png}}
 \subfigure[P=30\%, 12000 samples]{
 \label{Fig.sub.a2}
-\includegraphics[width=0.32\textwidth]{src/wcl-cifar10-3.png}}
+\includegraphics[width=0.32\textwidth]{src/cl-cifar10-3-scoredis.png}}
 \subfigure[P=50\%, 20000 samples]{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/cl-cifar10-5-scoredis.png}}
+\caption{CL tune selection percentage}
+\label{Fig.clcifar10}
+\end{figure}
+
+Rather than selecting only the top score samples, we proposed WCL to randomly select samples within each class based on the sample score. The results are shown in the first column of Figure \ref{Fig.wclcifar10}. Although most samples are selected from the high score region, there are some sample selected from the lower score regions. The problem is that less samples near the EGDIS boundary are selected. The boundary between close blobs are blurry thus we cannot guarantee the performance.
+
+
+
+\begin{figure}[H]
+\centering  
+\subfigure{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/wcl-cifar10-1.png}}
+\subfigure{
+\label{Fig.sub.a2}
+\includegraphics[width=0.32\textwidth]{src/wcl-cifar10-3.png}}
+\subfigure{
 \label{Fig.sub.a1}
 \includegraphics[width=0.32\textwidth]{src/wcl-cifar10-5.png}}
 
+\setcounter{subfigure}{0}
 \subfigure[P=10\%, 4000 samples]{
 \label{Fig.sub.a1}
 \includegraphics[width=0.32\textwidth]{src/wcl2-cifar10-1.png}}
@@ -148,16 +194,42 @@ WCL which takes the sample within each class based on the sample score. Although
 \label{Fig.sub.a1}
 \includegraphics[width=0.32\textwidth]{src/wcl2-cifar10-5.png}}
 \caption{WCL tune selection percentage. The first row we use weighted sampling method, the second row we use EGDIS based method.}
-\label{Fig.clcifar10}
+\label{Fig.wclcifar10}
 \end{figure}
 
-In theory, POP tends to select pure boundary samples. EGDIS tends to select samples near two closing clusters and the samples from densest area, which could be anywhere actually. For CL, it tends to select samples far from the boundary, i.e the inner samples. WCL, would choose sample from both the closer cluster boundaries as well as the inner samples. The drawback of CL is that when all the samples are simple enough, with score larger than 0.9, they would tend to act like random selection.
+Therefore, we combined both WCL and EGDIS selected boundary samples and proposed the method BWCL. Compared with EGDIS, our BWCL can both get the similar score distribution as well as recover the shape of blobs. However, due to randomness during selection, we cannot guarantee to select the same datasets each time. This makes the classification accuracy unstable for machine learning models. We plotted the score distributions in Figure \ref{Fig.wclcifar10-dis}. We found that the score distribution of WCL is similar with the score distribution of the whole dataset in Figure \ref{Fig.clscores} while by selecting similar amount of samples, BWCL is similar with EGDIS in Figure \ref{Fig.egdiscifar10.a3}.
 
+\begin{figure}[H]
+\centering  
+\subfigure{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/wcl-cifar10-1-scoredis.png}}
+\subfigure{
+\label{Fig.sub.a2}
+\includegraphics[width=0.32\textwidth]{src/wcl-cifar10-3-scoredis.png}}
+\subfigure{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/wcl-cifar10-5-scoredis.png}}
+
+\setcounter{subfigure}{0}
+\subfigure[P=10\%, 4000 samples]{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/bwcl-cifar10-1-scoredis.png}}
+\subfigure[P=30\%, 12000 samples]{
+\label{Fig.sub.a2}
+\includegraphics[width=0.32\textwidth]{src/bwcl-cifar10-3-scoredis.png}}
+\subfigure[P=50\%, 20000 samples]{
+\label{Fig.sub.a1}
+\includegraphics[width=0.32\textwidth]{src/bwcl-cifar10-5-scoredis.png}}
+\caption{WCL tune selection percentage. The first row we use weighted sampling method, the second row we use EGDIS based method.}
+\label{Fig.wclcifar10-dis}
+\end{figure}
 
 
 \section{Experiment 3: Logistic Regression}
 \label{lr}
-We choose 40 and 20 as the number of our extra synthesised datasets, with LR accuracy: 0.78925, 0.853. By fine-tuning the selected subsets, the test accuracy is: 0.8065, 0.8745.
+
+For more comprehensive evaluation results and inspired by \cite{Istrate2019}, we manually synthesised two CIFAR100 subsets and fill in the classification gap between CIFAR10 and CIFAR100. Between 10 classes to 90 classes with gap 10, we choose to build 9 subsets with by selecting the samples from required number of classes. For each required classes, we randomly do the job 5 times and trained them to convergence with logistic regression model. The boxplot is shown in Figure \ref{Fig.logistic_subsets}. We choose 40 classes and 20 classes as the number of our extra synthesised datasets, with LR test accuracy: 0.78925 and 0.853. They have 8,028 samples and 16042 samples. Then we repeated the feature compression process described before to fine-tuning the selected subsets and compress the extracted features. The final test accuracy is 0.8065 and 0.8745 respectively. In our reported accuracy below, we use CIFAR20 and CIFAR40 to refer to these synthesised datasets.
 
  \begin{figure}[H]
  \centering
@@ -166,28 +238,30 @@ We choose 40 and 20 as the number of our extra synthesised datasets, with LR acc
  \label{Fig.logistic_subsets}
  \end{figure}
  
- \begin{figure}[H]
+ Our first discovery is that it is hard to select right amount of subsets with POP because the number of samples with weakness 128 is very low for all datasets except CIFAR10. Even for threshold 1, the number of pure inner is still low. Therefore, it is not good to choose samples with weakness < 128. From our experiment, we found that the reduction rate for EGDIS is good enough. Therefore, we make POP, CL, WCL and BWCL to select the same amount of samples as EGDIS. For POP, we ranked samples based on weakness and select from low to high. Therefore, we can have a fair comparison of their classification performance. The POP weakness distributions are shown in Figure \ref{Fig.pop_count}.
+ 
+ \begin{figure}
 \centering  
 \subfigure[CIFAR10, 40000 samples]{
 \label{Fig.sub.a1}
-\includegraphics[width=1\textwidth]{src/pop-cifar10-count.png}}
+\includegraphics[width=0.4\textwidth]{src/pop-cifar10-count.png}}
 \subfigure[CIFAR20, 8028 samples]{
 \label{Fig.sub.a2}
-\includegraphics[width=1\textwidth]{src/pop-cifar20-count.png}}
+\includegraphics[width=0.4\textwidth]{src/pop-cifar20-count.png}}
 \subfigure[CIFAR40, 16042 samples]{
 \label{Fig.sub.a1}
-\includegraphics[width=1\textwidth]{src/pop-cifar40-count.png}}
+
+\includegraphics[width=0.4\textwidth]{src/pop-cifar40-count.png}}
 \subfigure[CIFAR100, 40000 samples]{
 \label{Fig.sub.a1}
-\includegraphics[width=1\textwidth]{src/pop-cifar100-count.png}}
+\includegraphics[width=0.4\textwidth]{src/pop-cifar100-count.png}}
 \caption{POP with 4 datasets.}
-\label{Fig.clcifar10}
+\label{Fig.pop_count}
 \end{figure}
 
-Even for POP with threshold 1, the number of pure inner is still low. Therefore, it is not good to choose samples with weakness < 128. We fix the number and choose CIFAR samples. From our experiment, we found that the relative accuracy acquired from EGDIS is good enough. Therefore, we make POP to select the same amount of samples as EGDIS, by ranking POP samples based on weakness, to compare their performance.
+For the five algorithms, we performed the selection process 12 times and reported the average accuracy with logistic regression model. The relative accuracy is recorded in Table \ref{lg_acc}. We can see that the retention rate is increasing with the classification difficulty of the datasets. POP and EGDIS perform better with simpler dataset such as CIFAR10. For EGDIS, it even achieved an accuracy increase. We think this is because with selected boundary and dense samples only, the overfitting problem is reduced. However, the performances of WCL and BWCL are more stable than EGDIS. Their relative accuracy decreases slowly just like POP. Among all three classification score based algorithms, BWCL is more capable of dealing with harder datasets. We believe the reason is that BWCL can maintain the EGDIS selected boundary and the self-adaptive selection manner of WCL.
  
- 
-\begin{table}
+\begin{table}[H]
     \centering
     \begin{tabular}{|l|l|l|l|l|l|l|}
     \hline
@@ -198,9 +272,10 @@ Even for POP with threshold 1, the number of pure inner is still low. Therefore,
         CIFAR100 & 31.48\% & 99.38\% & 97.78\% & 98.78\% & 99.46\% & \textbf{99.49}\% \\ \hline
     \end{tabular}
     \caption{Logistic Regression test set relative accuracy by averaging 12 runs}
-    \label{132e3213}
+    \label{lg_acc}
 \end{table}
 
+ We should notice that the average relative accuracy of BWCL is not the best value. We tuned the maximum proportion of boundary samples from 0.1 to 0.4 with step 0.1 and trained them 3 times each. In Figure \ref{Fig.logistic_relativeacc.a2}, we reported the relative accuracy in plot. It is clear that for simpler datasets, we should choose less hard examples. For harder datasets, we should choose more boundary samples. 
 
 \begin{figure}[H]
 \centering  
@@ -208,13 +283,13 @@ Even for POP with threshold 1, the number of pure inner is still low. Therefore,
 \label{Fig.sub.a1}
 \includegraphics[width=0.45\textwidth]{src/lg_relative.png}}
 \subfigure[Relative Accuracy of BWCL by tuning maximum boundary proportion]{
-\label{Fig.sub.a2}
+\label{Fig.logistic_relativeacc.a2}
 \includegraphics[width=0.45\textwidth]{src/bwcl_relative.png}}
 \caption{Relative Accuracy of data reduction algorithms}
 \label{Fig.logistic_relativeacc}
 \end{figure}
 
-However, this is not a solid conclusion because the quality of the extracted features are so good that the classes are classified easily. We show this effect by varying the proportion of samples selected with BWCL, 0.4.
+We took a further analysis for BWCL, by varying the proportion of samples selected relative to the number of samples selected by EGDIS. We fixed the maximum boundary proportion to 0.4. The relative accuracy is reported in Figure \ref{Fig.logistic_subsets}. We found that the quality of the extracted features are so good that the test set samples are classified easily. This means that the results from logistic regression may not transfer to CNN experiments well but this provide us a good start.
 
 \begin{figure}[H]
  \centering
