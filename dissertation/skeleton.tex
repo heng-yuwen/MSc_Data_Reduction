@@ -31,12 +31,12 @@
 \begin{document}
 \begin{preliminary}
 
-\title{An Attempt to Reduce the Number of Training Samples for Convolutional Neural Network}
+\title{An Attempt to Reduce the Number of Training Samples for Convolutional Neural Networks}
 
 \author{Yuwen Heng}
 
 \abstract{
-Training deep neural networks can be resources-consuming. The budget required is increasing with the size of the dataset. During the past few decades, many research is dedicated to developing training procedures to accelerate the convergence speed of deep learning. However, we still need the whole dataset to train the network and paying for a large dataset may not pay back well if we can use a smaller subset to achieve an acceptable performance. To solve this issue, we first adapted and evaluated three methods, Patterns by Ordered Projections (POP), Enhanced Global Density-based Instance Selection (EGDIS), and Curriculum Learning (CL), to reduce the size of two image datasets, CIFAR10 and CIFAR100, for the classification task. Based on the analysis, we present our two contributions: the Weighted Curriculum Learning (WCL) and a trade-off framework. The WCL outperforms POP and EGDIS in terms of both classification accuracy and time complexity. It achieves comparable performance compared with CL while keeping a portion of hard examples. The trade-off framework selects a subset of samples according to the acceptable relative accuracy and the dataset. In addition, the framework is also extended to predict the number of samples needed to achieve a particular accuracy with a given subset.
+Training deep neural networks can be resources-consuming. The budget required is increasing with the size of the dataset. During the past ten years, many achievements are dedicated to accelerating the convergence speed with heuristic or theoretical training procedures.  However, we still need the whole dataset to train the network and paying for a large dataset may not pay back well if we can use a smaller subset to achieve an acceptable performance. In order to reduce the number of training samples needed, we first adapted and evaluated three methods, Patterns by Ordered Projections (POP), Enhanced Global Density-based Instance Selection (EGDIS), and Curriculum Learning (CL), to reduce the size of two image datasets, CIFAR10 and CIFAR100, for the classification task. Based on the analysis, we present our main contributions: improved CL and evaluated its two variations, the Weighted Curriculum Learning (WCL) and the Boundary based Weighted Curriculum Learning (BWCL). The WCL outperforms POP and EGDIS in terms of both classification accuracy and time complexity. Also, WCL and BWCL achieve comparable performance compared with CL while keeping a portion of hard examples. Besides, we proposed a trade-off framework for WCL to select a subset of samples according to the acceptable relative accuracy and the original datasets. 
 }
 
 \maketitle
@@ -46,7 +46,7 @@ First and foremost, I would like to express my deepest gratitude to my superviso
 
 Furthermore, special thanks go to Professor Bob Fisher, Dr Pavlos Andreadis at the University of Edinburgh and Dr Jiacheng Ni at IBM for sharing me their knowledge about computer vision and deep learning. The programming skills and coursework experience that I learnt from them helped me to organise the experiments well.
 
-Finally, I would like to send my love to my fiancee Danni Li for her accompany during the past three years . I wouldn't have the chance to study full-time without her full support. 
+Finally, I would like to send my love to my fiancee Danni Li for her accompany during the past three years. I wouldn't have the chance to study full-time without her full support. 
 \tableofcontents
 \end{preliminary}
 
@@ -66,9 +66,6 @@ Finally, I would like to send my love to my fiancee Danni Li for her accompany d
 
 \chapter{Trade-off Framework}
 \subfile{sections/cp5-tfframework.tex}
-
-\chapter{Trade-off Evaluation}
-\subfile{sections/cp6-tfevaluation.tex}
 
 \chapter{Conclusion and Future Work}
 \subfile{sections/conclusion}

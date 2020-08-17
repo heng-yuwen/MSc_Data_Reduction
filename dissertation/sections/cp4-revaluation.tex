@@ -350,3 +350,26 @@ We took a closer look at the training curve of the first training stage to analy
 \caption{The training trend of four datasets by selecting the same amount of samples as EGDIS, of the first 150 epochs}
 \label{Fig.training_trend}
 \end{figure}
+
+We took a closer look at the relative accuracy achieved by adjusting the proportion of samples selected by these algorithms. It seems that WCL is better than CL and BWCL when dealing with easier datasets like CIFAR10. However, we still have one more problem remains: how to set the right amount of samples to select as a start? We noticed that for all our four datasets, by selecting 50\% of the whole samples, we can have a relative accuracy higher than 90\%. A heuristic guide is to take 50\% of samples and consider it as 90\% relative accuracy. Then use linear line to decide the amount of samples to select. To make this more reliable, we took another experiment, by analysing the relationship between validation accuracy history and final relative accuracy. We reported the detail in the next Chapter.
+
+ 
+
+\begin{figure}[H]
+\centering  
+\subfigure[CIFAR10]{
+\label{Fig.sub.a1}
+\includegraphics[width=0.45\textwidth]{src/cifar10_compare.png}}
+\subfigure[CIFAR100]{
+\label{Fig.sub.a2}
+\includegraphics[width=0.45\textwidth]{src/cifar100_compare.png}}
+
+\subfigure[CIFAR20]{
+\label{Fig.sub.a2}
+\includegraphics[width=0.45\textwidth]{src/cifar20_compare.png}}
+\subfigure[CIFAR40]{
+\label{Fig.sub.a2}
+\includegraphics[width=0.45\textwidth]{src/cifar40_compare.png}}
+\caption{The relative accuracy to compare the performance of three algorithms with different retention rate.}
+\label{Fig.algcompare_cnn}
+\end{figure}
